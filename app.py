@@ -27,3 +27,30 @@ def verificar_webhook():
 def receber_webhook():
     dados = request.get_json(silent=True)
     return "EVENT_RECEIVED", 200
+
+
+def enviar_mensagem(numero, mensagem):
+    url = f"https://graph.facebook.com/v26.0/{PHONE_NUMBER_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": numero,
+        "type": "text",
+        "text": {
+            "body": mensagem
+        }
+    }
+
+    resposta = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=15
+    )
+
+    return resposta.status_code
