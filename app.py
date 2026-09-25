@@ -7,6 +7,8 @@ app = Flask(__name__)
 VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN")
 WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")
+TEST_PHONE = os.environ.get("TEST_PHONE")
+TEST_SECRET = os.environ.get("TEST_SECRET")
 
 @app.route("/", methods=["GET"])
 def inicio():
@@ -54,3 +56,24 @@ def enviar_mensagem(numero, mensagem):
     )
 
     return resposta.status_code
+
+
+@app.route("/teste-envio", methods=["POST"])
+def teste_envio():
+    segredo = request.headers.get("X-Test-Secret")
+
+    if not TEST_SECRET or segredo != TEST_SECRET:
+        return "Não autorizado", 401
+
+    if not TEST_PHONE:
+        return "Número de teste não configurado", 500
+
+    status = enviar_mensagem(
+        TEST_PHONE,
+        "Teste de envio da API oficial do WhatsApp da CMK."
+    )
+
+    if status == 200:
+        return "Mensagem enviada", 200
+
+    return "Falha no envio", 500
