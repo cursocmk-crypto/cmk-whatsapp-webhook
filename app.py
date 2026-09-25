@@ -33,7 +33,7 @@ def verificar_webhook():
 def receber_webhook():
         dados = request.get_json(silent=True) or {}
 
-    try:
+        try:
         value = dados["entry"][0]["changes"][0]["value"]
         mensagens = value.get("messages", [])
         contatos = value.get("contacts", [])
