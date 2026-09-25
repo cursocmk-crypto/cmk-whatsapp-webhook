@@ -66,19 +66,6 @@ def receber_webhook():
     return "EVENT_RECEIVED", 200
 
 
-                salvar_mensagem(
-                    telefone,
-                    nome_contato,
-                    texto,
-                    "entrada",
-                    whatsapp_message_id
-                )
-
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    return "EVENT_RECEIVED", 200
-
 def salvar_mensagem(telefone, nome_contato, mensagem, direcao, whatsapp_message_id):
     url = f"{SUPABASE_URL}/rest/v1/mensagens"
 
