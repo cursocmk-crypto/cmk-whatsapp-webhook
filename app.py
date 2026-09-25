@@ -157,7 +157,96 @@ def atendimento():
         timeout=15
     )
 
-    return {
-        "status_supabase": resposta.status_code,
-        "mensagens": resposta.json() if resposta.ok else resposta.text
-    }, 200
+    if not resposta.ok:
+        return "Erro ao carregar as mensagens.", 500
+
+    mensagens = resposta.json()
+
+    linhas = ""
+
+    for item in mensagens:
+        nome = item.get("nome_contato") or "Contato"
+        telefone = item.get("telefone") or ""
+        mensagem = item.get("mensagem") or ""
+
+        linhas += f"""
+        <div class="conversa">
+            <div class="nome">{nome}</div>
+            <div class="telefone">{telefone}</div>
+            <div class="mensagem">{mensagem}</div>
+        </div>
+        """
+
+    if not linhas:
+        linhas = "<p>Nenhuma mensagem recebida.</p>"
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Atendimento CMK</title>
+
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background: #f3f4f6;
+                margin: 0;
+            }}
+
+            .topo {{
+                background: #111827;
+                color: white;
+                padding: 20px 30px;
+            }}
+
+            .topo h1 {{
+                margin: 0;
+                font-size: 24px;
+            }}
+
+            .conteudo {{
+                max-width: 900px;
+                margin: 30px auto;
+                padding: 0 20px;
+            }}
+
+            .conversa {{
+                background: white;
+                padding: 18px;
+                margin-bottom: 12px;
+                border-radius: 10px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            }}
+
+            .nome {{
+                font-weight: bold;
+                font-size: 17px;
+            }}
+
+            .telefone {{
+                color: #6b7280;
+                font-size: 13px;
+                margin-top: 3px;
+            }}
+
+            .mensagem {{
+                margin-top: 12px;
+                font-size: 15px;
+            }}
+        </style>
+    </head>
+
+    <body>
+        <div class="topo">
+            <h1>Atendimento CMK</h1>
+        </div>
+
+        <div class="conteudo">
+            <h2>Mensagens recebidas</h2>
+            {linhas}
+        </div>
+    </body>
+    </html>
+    """, 200
