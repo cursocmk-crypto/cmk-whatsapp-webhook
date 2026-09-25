@@ -140,3 +140,20 @@ def teste_envio():
         return "Mensagem enviada", 200
 
     return "Falha no envio", 500
+
+
+@app.route("/atendimento", methods=["GET"])
+def atendimento():
+    return """
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Atendimento CMK</title>
+    </head>
+    <body>
+        <h1>Atendimento CMK</h1>
+        <p>Caixa de atendimento funcionando!</p>
+    </body>
+    </html>
+    """, 200
