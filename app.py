@@ -1,0 +1,27 @@
+import os
+from flask import Flask, request
+
+app = Flask(__name__)
+
+VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN")
+
+@app.route("/", methods=["GET"])
+def inicio():
+    return "Webhook da CMK funcionando!", 200
+
+@app.route("/webhook", methods=["GET"])
+def verificar_webhook():
+    modo = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    desafio = request.args.get("hub.challenge")
+
+    if modo == "subscribe" and token == VERIFY_TOKEN:
+        return desafio, 200
+
+    return "Falha na verificacao", 403
+
+@app.route("/webhook", methods=["POST"])
+def receber_webhook():
+    dados = request.get_json(silent=True)
+    print(dados)
+    return "EVENT_RECEIVED", 200
