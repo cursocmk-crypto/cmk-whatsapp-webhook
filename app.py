@@ -90,7 +90,7 @@ def salvar_mensagem(telefone, nome_contato, mensagem, direcao, whatsapp_message_
         json=dados,
         timeout=15
     )
-
+    print("SUPABASE STATUS:", resposta.status_code, "RESPOSTA:", resposta.text)
     return resposta.status_code
 
 
