@@ -34,32 +34,32 @@ def receber_webhook():
         dados = request.get_json(silent=True) or {}
 
         try:
-        value = dados["entry"][0]["changes"][0]["value"]
-        mensagens = value.get("messages", [])
-        contatos = value.get("contacts", [])
+            value = dados["entry"][0]["changes"][0]["value"]
+            mensagens = value.get("messages", [])
+            contatos = value.get("contacts", [])
 
-        if mensagens:
-            msg = mensagens[0]
-
-            telefone = msg.get("from")
-            whatsapp_message_id = msg.get("id")
-
-            nome_contato = ""
-            if contatos:
-                nome_contato = contatos[0].get("profile", {}).get("name", "")
-
-            if msg.get("type") == "text":
-                texto = msg.get("text", {}).get("body", "")
-            else:
-                texto = f"[{msg.get('type', 'mensagem')}]"
-
-            salvar_mensagem(
-                telefone,
-                nome_contato,
-                texto,
-                "entrada",
-                whatsapp_message_id
-            )
+            if mensagens:
+                msg = mensagens[0]
+    
+                telefone = msg.get("from")
+                whatsapp_message_id = msg.get("id")
+    
+                nome_contato = ""
+                if contatos:
+                    nome_contato = contatos[0].get("profile", {}).get("name", "")
+    
+                if msg.get("type") == "text":
+                    texto = msg.get("text", {}).get("body", "")
+                else:
+                    texto = f"[{msg.get('type', 'mensagem')}]"
+    
+                salvar_mensagem(
+                    telefone,
+                    nome_contato,
+                    texto,
+                    "entrada",
+                    whatsapp_message_id
+                )
 
     except (KeyError, IndexError, TypeError):
         pass
