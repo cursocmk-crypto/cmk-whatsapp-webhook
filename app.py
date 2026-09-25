@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request
+import requests
 
 app = Flask(__name__)
 
@@ -23,5 +24,4 @@ def verificar_webhook():
 @app.route("/webhook", methods=["POST"])
 def receber_webhook():
     dados = request.get_json(silent=True)
-    print(dados)
     return "EVENT_RECEIVED", 200
