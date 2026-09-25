@@ -144,16 +144,20 @@ def teste_envio():
 
 @app.route("/atendimento", methods=["GET"])
 def atendimento():
-    return """
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <title>Atendimento CMK</title>
-    </head>
-    <body>
-        <h1>Atendimento CMK</h1>
-        <p>Caixa de atendimento funcionando!</p>
-    </body>
-    </html>
-    """, 200
+    url = f"{SUPABASE_URL}/rest/v1/mensagens?select=*&order=created_at.desc"
+
+    headers = {
+        "apikey": SUPABASE_SECRET_KEY,
+        "Authorization": f"Bearer {SUPABASE_SECRET_KEY}"
+    }
+
+    resposta = requests.get(
+        url,
+        headers=headers,
+        timeout=15
+    )
+
+    return {
+        "status_supabase": resposta.status_code,
+        "mensagens": resposta.json() if resposta.ok else resposta.text
+    }, 200
