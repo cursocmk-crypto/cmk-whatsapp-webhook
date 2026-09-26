@@ -1,120 +1,96 @@
+import os
+import html
+import secrets
+from datetime import datetime, timezone
+from flask import Flask, request, redirect, Response
+import requests
 
-                .mensagem-balao {{
-                    max-width: 88%;
-                }}
-            }}
-        </style>
-    </head>
+app = Flask(__name__)
 
-    <body>
+VERIFY_TOKEN = os.environ.get("VERIFY_TOKEN")
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN")
+PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")
+TEST_PHONE = os.environ.get("TEST_PHONE")
+TEST_SECRET = os.environ.get("TEST_SECRET")
 
-        <header class="topo">
-            <div class="marca">
-                CMK • Central de Atendimento
-            </div>
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
 
-            <nav class="menu">
-                <a
-                    class="ativo"
-                    href="/atendimento"
-                >
-                    Atendimento
-                </a>
-
-                <a href="/campanhas">
-                    Campanhas
-                </a>
-            </nav>
-        </header>
-
-        <main class="central">
-
-            <aside class="lateral">
-                <div class="titulo-lateral">
-                    Conversas
-                </div>
-
-                {lista_contatos}
-            </aside>
-
-            <section class="painel">
-                {area_conversa}
-            </section>
-
-        </main>
-
-    </body>
-    </html>
-    """, 200
+ATENDIMENTO_USER = os.environ.get("ATENDIMENTO_USER")
+ATENDIMENTO_PASSWORD = os.environ.get("ATENDIMENTO_PASSWORD")
 
 
 # =========================================================
-# CAMPANHAS
+# FUNÇÕES AUXILIARES
 # =========================================================
 
-def buscar_contatos_campanha():
-    """Consulta apenas campos necessários; não expõe credenciais no navegador."""
-    url = f"{SUPABASE_URL}/rest/v1/contatos_cmk"
-    try:
-        resposta = requests.get(
-            url,
-            headers=supabase_headers(),
-            params={"select": "telefone,nome,autorizado,descadastrado,origem_autorizacao", "limit": "1000"},
-            timeout=15,
-        )
-        if not resposta.ok:
-            print("ERRO CONTATOS:", resposta.status_code)
-            return None
-        return resposta.json()
-    except requests.RequestException as erro:
-        print("ERRO CONEXAO CONTATOS:", type(erro).__name__)
-        return None
+def supabase_headers():
+    return {
+        "apikey": SUPABASE_SECRET_KEY,
+        "Authorization": f"Bearer {SUPABASE_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
 
 
-@app.route("/campanhas", methods=["GET"])
-def campanhas():
-    if not autenticado():
-        return exigir_login()
+def autenticado():
+    auth = request.authorization
 
-    contatos = buscar_contatos_campanha()
-    if contatos is None:
-        resumo = "Não foi possível consultar os contatos. Verifique as permissões no Supabase."
-        linhas = ""
-    else:
-        unicos = {}
-        for contato in contatos:
-            telefone = "".join(c for c in (contato.get("telefone") or "") if c.isdigit())
-            if telefone:
-                unicos[telefone] = contato
-        aptos = [c for c in unicos.values() if c.get("autorizado") is True and c.get("descadastrado") is not True]
-        resumo = f"{len(unicos)} contatos únicos cadastrados · {len(aptos)} marcados como autorizados e ativos"
-        linhas = "".join(
-            "<tr><td>" + html.escape(c.get("nome") or "Sem nome") +
-            "</td><td>" + html.escape(numero) +
-            "</td><td>" + ("Sim" if c.get("autorizado") is True else "Não") +
-            "</td><td>" + ("Sim" if c.get("descadastrado") is True else "Não") +
-            "</td></tr>"
-            for numero, c in list(unicos.items())[:100]
-        )
+    if not ATENDIMENTO_USER or not ATENDIMENTO_PASSWORD:
+        return False
 
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CMK · Campanhas</title>
-<style>
-body{{font-family:Arial,sans-serif;background:#f3f4f6;color:#111827;margin:0}}
-header{{background:#111827;color:white;padding:22px}}
-main{{max-width:1000px;margin:30px auto;background:white;padding:26px;border-radius:12px}}
-a{{color:#124c84}} .aviso{{background:#fff3ce;padding:18px;border-radius:9px;margin:20px 0}}
-table{{border-collapse:collapse;width:100%}}td,th{{padding:11px;text-align:left;border-bottom:1px solid #ddd}}
-.tabela{{overflow-x:auto}}@media(max-width:600px){{main{{margin:8px;padding:14px}}}}
-</style></head><body><header><h2>CMK · Campanhas</h2></header>
-<main><a href="/atendimento">← Voltar ao atendimento</a>
-<h1>Contatos da campanha</h1><p>{html.escape(resumo)}</p>
-<div class="aviso"><strong>Disparos ainda desativados.</strong><br>
-Aguardamos a aprovação do modelo de Marketing pela Meta. Antes de enviar, vamos validar
-as autorizações, registrar os envios e testar o descadastro.</div>
-<h2>Prévia dos contatos (até 100)</h2>
-<div class="tabela"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Autorizado</th><th>Descadastrado</th></tr></thead>
-<tbody>{linhas}</tbody></table></div>
-</main></body></html>""", 200
+    if not auth:
+        return False
+
+    usuario_ok = secrets.compare_digest(
+        auth.username or "",
+        ATENDIMENTO_USER
+    )
+
+    senha_ok = secrets.compare_digest(
+        auth.password or "",
+        ATENDIMENTO_PASSWORD
+    )
+
+    return usuario_ok and senha_ok
+
+
+def exigir_login():
+    return Response(
+        "Acesso restrito à equipe CMK.",
+        401,
+        {
+            "WWW-Authenticate": 'Basic realm="Atendimento CMK"'
+        }
+    )
+
+
+def salvar_mensagem(
+    telefone,
+    nome_contato,
+    mensagem,
+    direcao,
+    whatsapp_message_id
+):
+    url = f"{SUPABASE_URL}/rest/v1/mensagens"
+
+    headers = supabase_headers()
+    headers["Prefer"] = "return=minimal"
+
+    dados = {
+        "telefone": telefone,
+        "nome_contato": nome_contato,
+        "mensagem": mensagem,
+        "direcao": direcao,
+        "whatsapp_message_id": whatsapp_message_id
+    }
+
+    resposta = requests.post(
+        url,
+        headers=headers,
+        json=dados,
+        timeout=15
+    )
+
+    print(
+        "SUPABASE STATUS:",
+        resposta.status_code
