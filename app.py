@@ -1067,8 +1067,7 @@ if 200 <= status < 300:
             "Template enviado com sucesso para este contato!",
             200
         )
-
-    return "Não foi possível enviar o template.", 500
+return "Não foi possível enviar o template.", 500
 
 
     # =========================================================
