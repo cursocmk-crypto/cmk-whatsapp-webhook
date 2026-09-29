@@ -103,25 +103,37 @@ def buscar_mensagens():
     url = f"{SUPABASE_URL}/rest/v1/mensagens"
 
     parametros = {
-        "select": "*",
-        "order": "created_at.asc"
+        "select": "telefone,nome_contato,mensagem,direcao,whatsapp_message_id,created_at",
+        "order": "created_at.desc",
+        "limit": "500"
     }
 
-    resposta = requests.get(
-        url,
-        headers=supabase_headers(),
-        params=parametros,
-        timeout=15
-    )
-
-    if not resposta.ok:
-        print(
-            "ERRO AO LER SUPABASE:",
-            resposta.status_code
+    try:
+        resposta = requests.get(
+            url,
+            headers=supabase_headers(),
+            params=parametros,
+            timeout=10
         )
-        return []
 
-    return resposta.json()
+        if not resposta.ok:
+            print(
+                "ERRO AO LER SUPABASE:",
+                resposta.status_code
+            )
+            return []
+
+        mensagens = resposta.json()
+
+        # O Supabase entrega as mais recentes primeiro.
+        # Invertemos para a conversa aparecer na ordem correta.
+        mensagens.reverse()
+
+        return mensagens
+
+    except requests.RequestException:
+        print("FALHA DE CONEXAO AO LER MENSAGENS")
+        return []
 
 
 def enviar_mensagem(numero, mensagem):
