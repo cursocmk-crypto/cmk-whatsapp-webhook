@@ -4,6 +4,7 @@ import secrets
 from datetime import datetime, timezone
 from flask import Flask, request, redirect, Response
 import requests
+import uuid
 
 app = Flask(__name__)
 
@@ -69,7 +70,8 @@ def salvar_mensagem(
     nome_contato,
     mensagem,
     direcao,
-    whatsapp_message_id
+    whatsapp_message_id,
+    request_id=None
 ):
     url = f"{SUPABASE_URL}/rest/v1/mensagens"
 
@@ -81,22 +83,28 @@ def salvar_mensagem(
         "nome_contato": nome_contato,
         "mensagem": mensagem,
         "direcao": direcao,
-        "whatsapp_message_id": whatsapp_message_id
+        "whatsapp_message_id": whatsapp_message_id,
+        "request_id": request_id
     }
 
-    resposta = requests.post(
-        url,
-        headers=headers,
-        json=dados,
-        timeout=15
-    )
+    try:
+        resposta = requests.post(
+            url,
+            headers=headers,
+            json=dados,
+            timeout=15
+        )
 
-    print(
-        "SUPABASE STATUS:",
-        resposta.status_code
-    )
+        print(
+            "SUPABASE STATUS:",
+            resposta.status_code
+        )
 
-    return resposta.status_code
+        return resposta.ok
+
+    except requests.RequestException:
+        print("FALHA AO SALVAR MENSAGEM")
+        return False
 
 
 def buscar_mensagens():
@@ -352,9 +360,42 @@ def atendimento_enviar():
     telefone = request.form.get("telefone", "").strip()
     nome = request.form.get("nome", "").strip()
     mensagem = request.form.get("mensagem", "").strip()
+    request_id = request.form.get("request_id", "").strip()
 
     if not telefone or not mensagem:
         return "Telefone e mensagem são obrigatórios.", 400
+
+    if not request_id:
+        request_id = str(uuid.uuid4())
+
+    # Reserva este request_id antes de enviar para o WhatsApp.
+    try:
+        resposta_trava = requests.post(
+            f"{SUPABASE_URL}/rest/v1/travas_envio",
+            headers={
+                **supabase_headers(),
+                "Prefer": "return=minimal"
+            },
+            json={
+                "request_id": request_id
+            },
+            timeout=10
+        )
+
+        # Chave duplicada: este envio já está em processamento
+        # ou já foi processado.
+        if resposta_trava.status_code == 409:
+            return "Mensagem já processada.", 200
+
+        if not resposta_trava.ok:
+            print(
+                "ERRO AO CRIAR TRAVA:",
+                resposta_trava.status_code
+            )
+            return "Não foi possível iniciar o envio.", 500
+
+    except requests.RequestException:
+        return "Falha de conexão ao iniciar o envio.", 500
 
     status, message_id = enviar_mensagem(
         telefone,
@@ -367,18 +408,30 @@ def atendimento_enviar():
             nome,
             mensagem,
             "saida",
-            message_id
+            message_id,
+            request_id=request_id
         )
 
-        return redirect(
-            f"/atendimento?telefone={telefone}"
+        return "Mensagem enviada.", 200
+
+    # Se a Meta não aceitou o envio, libera a trava
+    # para permitir uma nova tentativa.
+    try:
+        requests.delete(
+            f"{SUPABASE_URL}/rest/v1/travas_envio",
+            headers=supabase_headers(),
+            params={
+                "request_id": f"eq.{request_id}"
+            },
+            timeout=10
         )
+    except requests.RequestException:
+        print("FALHA AO LIBERAR TRAVA")
 
     return (
         "Não foi possível enviar a mensagem pelo WhatsApp.",
         500
     )
-
 
 # =========================================================
 # CENTRAL DE ATENDIMENTO
@@ -538,6 +591,11 @@ def atendimento():
                 type="hidden"
                 name="nome"
                 value="{nome}"
+            >
+            <input
+                type="hidden"
+                name="request_id"
+                value=""
             >
 
             <textarea
@@ -883,6 +941,7 @@ def atendimento():
     const botao = form.querySelector('button[type="submit"]');
     const textarea = form.querySelector('textarea[name="mensagem"]');
     const historico = document.querySelector('.historico');
+    const requestIdInput = form.querySelector('input[name="request_id"]');
 
     if (form.dataset.enviando === '1') {{
         return false;
@@ -890,11 +949,15 @@ def atendimento():
 
     const mensagem = textarea.value.trim();
 
-    if (!mensagem) {{
-        return false;
-    }}
+   if (!mensagem) {{
+    return false;
+}}
 
-    form.dataset.enviando = '1';
+if (!requestIdInput.value) {{
+    requestIdInput.value = crypto.randomUUID();
+}}
+
+form.dataset.enviando = '1';
 
     botao.disabled = true;
     botao.innerText = 'Enviando...';
@@ -919,6 +982,7 @@ def atendimento():
                 }}
 
                 textarea.value = '';
+                requestIdInput.value = '';
 
             }} catch (erro) {{
                 alert('Não foi possível enviar a mensagem. Tente novamente.');
