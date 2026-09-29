@@ -886,3 +886,51 @@ as autorizações, registrar os envios e testar o descadastro.</div>
 <div class="tabela"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Autorizado</th><th>Descadastrado</th></tr></thead>
 <tbody>{linhas}</tbody></table></div>
 </main></body></html>""", 200
+
+
+# =========================================================
+# TESTE DO TEMPLATE DE MARKETING
+# =========================================================
+
+@app.route("/teste-template", methods=["POST"])
+def teste_template():
+    if not autenticado():
+        return exigir_login()
+
+    if not TEST_PHONE:
+        return "Número de teste não configurado.", 500
+
+    url = (
+        f"https://graph.facebook.com/v26.0/"
+        f"{PHONE_NUMBER_ID}/messages"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": TEST_PHONE,
+        "type": "template",
+        "template": {
+            "name": "cmk_curso_auxiliar_veterinaria",
+            "language": {
+                "code": "pt_BR"
+            }
+        }
+    }
+
+    resposta = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=15
+    )
+
+    if resposta.ok:
+        return "Template de teste enviado com sucesso!", 200
+
+    print("ERRO TEMPLATE:", resposta.status_code, resposta.text)
+    return "Não foi possível enviar o template.", 500
