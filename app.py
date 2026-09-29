@@ -694,11 +694,13 @@ def atendimento():
                 text-overflow: ellipsis;
             }}
 
-            .painel {{
-                display: flex;
-                flex-direction: column;
-                min-width: 0;
-            }}
+         .painel {{
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}}
 
             .cabecalho-conversa {{
                 height: 72px;
