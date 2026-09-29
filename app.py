@@ -856,8 +856,7 @@ def campanhas():
                 unicos[telefone] = contato
         aptos = [c for c in unicos.values() if c.get("autorizado") is True and c.get("descadastrado") is not True]
         resumo = f"{len(unicos)} contatos únicos cadastrados · {len(aptos)} marcados como autorizados e ativos"
-
-      linhas = "".join(
+        linhas = "".join(
     "<tr><td>" + html.escape(c.get("nome") or "Sem nome") +
     "</td><td>" + html.escape(numero) +
     "</td><td>" + ("Sim" if c.get("autorizado") is True else "Não") +
