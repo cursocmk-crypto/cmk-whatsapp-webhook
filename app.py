@@ -856,14 +856,24 @@ def campanhas():
                 unicos[telefone] = contato
         aptos = [c for c in unicos.values() if c.get("autorizado") is True and c.get("descadastrado") is not True]
         resumo = f"{len(unicos)} contatos únicos cadastrados · {len(aptos)} marcados como autorizados e ativos"
-        linhas = "".join(
-            "<tr><td>" + html.escape(c.get("nome") or "Sem nome") +
-            "</td><td>" + html.escape(numero) +
-            "</td><td>" + ("Sim" if c.get("autorizado") is True else "Não") +
-            "</td><td>" + ("Sim" if c.get("descadastrado") is True else "Não") +
-            "</td></tr>"
-            for numero, c in list(unicos.items())[:100]
-        )
+
+      linhas = "".join(
+    "<tr><td>" + html.escape(c.get("nome") or "Sem nome") +
+    "</td><td>" + html.escape(numero) +
+    "</td><td>" + ("Sim" if c.get("autorizado") is True else "Não") +
+    "</td><td>" + ("Sim" if c.get("descadastrado") is True else "Não") +
+    "</td><td>" +
+    (
+        '<form method="POST" action="/campanhas/enviar-individual">'
+        '<input type="hidden" name="telefone" value="' + html.escape(numero) + '">'
+        '<button type="submit">Enviar teste</button>'
+        '</form>'
+        if c.get("autorizado") is True and c.get("descadastrado") is not True
+        else "Bloqueado"
+    ) +
+    "</td></tr>"
+    for numero, c in list(unicos.items())[:100]
+)
 
     return f"""<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8">
@@ -883,7 +893,7 @@ table{{border-collapse:collapse;width:100%}}td,th{{padding:11px;text-align:left;
 Aguardamos a aprovação do modelo de Marketing pela Meta. Antes de enviar, vamos validar
 as autorizações, registrar os envios e testar o descadastro.</div>
 <h2>Prévia dos contatos (até 100)</h2>
-<div class="tabela"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Autorizado</th><th>Descadastrado</th></tr></thead>
+<div class="tabela"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Autorizado</th><th>Descadastrado</th><th>Ação</th></tr></thead>
 <tbody>{linhas}</tbody></table></div>
 </main></body></html>""", 200
 
