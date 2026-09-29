@@ -1053,21 +1053,21 @@ def campanha_enviar_individual():
         telefone
     )
 
-if 200 <= status < 300:
+    if 200 <= status < 300:
         registrar_envio_campanha(
             telefone=telefone,
             nome=contato.get("nome") or "",
             template="cmk_curso_auxiliar_veterinaria",
             whatsapp_message_id=message_id,
             status="enviado"
-        )    
-    
-if 200 <= status < 300:
+        )
+
         return (
             "Template enviado com sucesso para este contato!",
             200
         )
-return "Não foi possível enviar o template.", 500
+
+    return "Não foi possível enviar o template.", 500
 
 
     # =========================================================
