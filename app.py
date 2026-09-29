@@ -265,7 +265,7 @@ def receber_webhook():
                     },
                     json={
                         "status": status_meta,
-                        "status_at": datetime.now(timezone.utc).isoformat()
+                        "status_at": datetime.now(timezone.utc).isoformat(),
                         "erro": str(erros_meta) if erros_meta else None
                     },
                     timeout=15
