@@ -1366,12 +1366,26 @@ def campanha_enviar_lote_teste():
         if telefone:
             unicos[telefone] = contato
 
-    aptos = [
-        (telefone, contato)
-        for telefone, contato in unicos.items()
-        if contato.get("autorizado") is True
-        and contato.get("descadastrado") is not True
-    ]
+    envios_anteriores = buscar_envios_campanha()
+
+telefones_ja_processados = set()
+
+for envio in envios_anteriores:
+    telefone_envio = "".join(
+        c for c in (envio.get("telefone") or "")
+        if c.isdigit()
+    )
+
+    if telefone_envio:
+        telefones_ja_processados.add(telefone_envio)
+
+aptos = [
+    (telefone, contato)
+    for telefone, contato in unicos.items()
+    if contato.get("autorizado") is True
+    and contato.get("descadastrado") is not True
+    and telefone not in telefones_ja_processados
+]
 
     enviados = 0
     falhas = 0
