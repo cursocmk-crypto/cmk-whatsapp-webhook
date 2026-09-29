@@ -879,25 +879,27 @@ def atendimento():
 
         </main>
              <script>
-        async function enviarMensagemAjax(form) {{
-            const botao = form.querySelector('button[type="submit"]');
-            const textarea = form.querySelector('textarea[name="mensagem"]');
-            const historico = document.querySelector('.historico');
+      async function enviarMensagemAjax(form) {{
+    const botao = form.querySelector('button[type="submit"]');
+    const textarea = form.querySelector('textarea[name="mensagem"]');
+    const historico = document.querySelector('.historico');
 
-            if (botao.disabled) {{
-                return false;
-            }}
+    if (form.dataset.enviando === '1') {{
+        return false;
+    }}
 
-            const mensagem = textarea.value.trim();
+    const mensagem = textarea.value.trim();
 
-            if (!mensagem) {{
-                return false;
-            }}
+    if (!mensagem) {{
+        return false;
+    }}
 
-            botao.disabled = true;
-            botao.innerText = 'Enviando...';
+    form.dataset.enviando = '1';
 
-            try {{
+    botao.disabled = true;
+    botao.innerText = 'Enviando...';
+
+    try {{
                 const resposta = await fetch(form.action, {{
                     method: 'POST',
                     body: new FormData(form)
@@ -920,11 +922,12 @@ def atendimento():
 
             }} catch (erro) {{
                 alert('Não foi possível enviar a mensagem. Tente novamente.');
-            }} finally {{
-                botao.disabled = false;
-                botao.innerText = 'Enviar';
-                textarea.focus();
-            }}
+           }} finally {{
+    form.dataset.enviando = '0';
+    botao.disabled = false;
+    botao.innerText = 'Enviar';
+    textarea.focus();
+}}
 
             return false;
         }}
