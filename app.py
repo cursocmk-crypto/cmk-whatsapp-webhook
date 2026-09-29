@@ -720,15 +720,16 @@ def atendimento():
                 font-size: 13px;
             }}
 
-            .historico {{
-                flex: 1;
-                overflow-y: auto;
-                padding: 25px;
-                background: #f8fafc;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }}
+           .historico {{
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 25px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}}
 
             .mensagem-balao {{
                 max-width: 70%;
@@ -750,13 +751,14 @@ def atendimento():
             }}
 
             .caixa-envio {{
-                min-height: 82px;
-                border-top: 1px solid #e5e7eb;
-                padding: 12px;
-                display: flex;
-                gap: 10px;
-                background: white;
-            }}
+    min-height: 82px;
+    flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    background: white;
+}}
 
             .caixa-envio textarea {{
                 flex: 1;
