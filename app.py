@@ -196,6 +196,7 @@ def receber_webhook():
         value = dados["entry"][0]["changes"][0]["value"]
 
         mensagens = value.get("messages", [])
+        statuses = value.get("statuses", [])
         contatos = value.get("contacts", [])
 
         for msg in mensagens:
@@ -245,7 +246,38 @@ def receber_webhook():
                     print("DESCADASTRO STATUS:", resposta_saida.status_code)
                 except requests.RequestException:
                     print("FALHA AO REGISTRAR DESCADASTRO")
+        for item_status in statuses:
+            message_id_status = item_status.get("id")
+            status_meta = item_status.get("status")
 
+            if not message_id_status or not status_meta:
+                continue
+
+            try:
+                resposta_status = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/envios_campanha",
+                    headers={
+                        **supabase_headers(),
+                        "Prefer": "return=minimal"
+                    },
+                    params={
+                        "whatsapp_message_id": f"eq.{message_id_status}"
+                    },
+                    json={
+                        "status": status_meta,
+                        "status_at": datetime.now(timezone.utc).isoformat()
+                    },
+                    timeout=15
+                )
+
+                print(
+                    "STATUS CAMPANHA:",
+                    status_meta,
+                    resposta_status.status_code
+                )
+
+            except requests.RequestException:
+                print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
     except (KeyError, IndexError, TypeError) as erro:
         print("WEBHOOK IGNORADO:", erro)
 
