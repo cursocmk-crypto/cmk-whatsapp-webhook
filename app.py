@@ -249,7 +249,7 @@ def receber_webhook():
         for item_status in statuses:
             message_id_status = item_status.get("id")
             status_meta = item_status.get("status")
-
+            erros_meta = item_status.get("errors", [])
             if not message_id_status or not status_meta:
                 continue
 
@@ -266,6 +266,7 @@ def receber_webhook():
                     json={
                         "status": status_meta,
                         "status_at": datetime.now(timezone.utc).isoformat()
+                        "erro": str(erros_meta) if erros_meta else None
                     },
                     timeout=15
                 )
