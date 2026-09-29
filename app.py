@@ -986,3 +986,68 @@ def enviar_template_marketing(numero):
             pass
 
     return resposta.status_code, message_id
+
+
+# =========================================================
+# ENVIO INDIVIDUAL DE CAMPANHA
+# =========================================================
+
+@app.route("/campanhas/enviar-individual", methods=["POST"])
+def campanha_enviar_individual():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.form.get("telefone", "").strip()
+
+    telefone = "".join(
+        c for c in telefone
+        if c.isdigit()
+    )
+
+    if not telefone:
+        return "Telefone inválido.", 400
+
+    # Confirma no Supabase se este contato está autorizado
+    # e se não solicitou descadastro.
+    try:
+        resposta_contato = requests.get(
+            f"{SUPABASE_URL}/rest/v1/contatos_cmk",
+            headers=supabase_headers(),
+            params={
+                "select": "telefone,nome,autorizado,descadastrado",
+                "telefone": f"eq.{telefone}",
+                "limit": "1"
+            },
+            timeout=15
+        )
+
+        if not resposta_contato.ok:
+            return "Não foi possível validar o contato.", 500
+
+        contatos = resposta_contato.json()
+
+    except requests.RequestException:
+        return "Não foi possível validar o contato.", 500
+
+    if not contatos:
+        return "Contato não encontrado.", 404
+
+    contato = contatos[0]
+
+    if contato.get("autorizado") is not True:
+        return "Envio bloqueado: contato não autorizado.", 403
+
+    if contato.get("descadastrado") is True:
+        return "Envio bloqueado: contato descadastrado.", 403
+
+    status, message_id = enviar_template_marketing(
+        telefone
+    )
+
+    if 200 <= status < 300:
+        return (
+            "Template enviado com sucesso para este contato!",
+            200
+        )
+
+    return "Não foi possível enviar o template.", 500
