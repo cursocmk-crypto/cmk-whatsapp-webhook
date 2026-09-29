@@ -214,39 +214,31 @@ def receber_webhook():
 
             tipo = msg.get("type")
 
-        if tipo == "text":
-            texto = (
-                msg.get("text", {})
-                .get("body", "")
-            )
+            if tipo == "text":
+                texto = msg.get("text", {}).get("body", "")
 
-        elif tipo == "button":
-            texto = (
-                msg.get("button", {})
-                .get("text", "")
-            )
+            elif tipo == "button":
+                texto = msg.get("button", {}).get("text", "")
 
-        elif tipo == "interactive":
-            interactive = msg.get("interactive", {})
-            interactive_type = interactive.get("type")
+            elif tipo == "interactive":
+                interactive = msg.get("interactive", {})
+                interactive_type = interactive.get("type")
 
-        if interactive_type == "button_reply":
-                texto = (
-                    interactive.get("button_reply", {})
-                    .get("title", "")
-                )
+                if interactive_type == "button_reply":
+                    texto = interactive.get(
+                        "button_reply", {}
+                    ).get("title", "")
 
-            elif interactive_type == "list_reply":
-                texto = (
-                    interactive.get("list_reply", {})
-                    .get("title", "")
-                )
+                elif interactive_type == "list_reply":
+                    texto = interactive.get(
+                        "list_reply", {}
+                    ).get("title", "")
+
+                else:
+                    texto = "[resposta interativa]"
 
             else:
-                texto = "[resposta interativa]"
-
-        else:
-            texto = f"[{tipo or 'mensagem'}]"
+                texto = f"[{tipo or 'mensagem'}]"
 
             salvar_mensagem(
                 telefone,
