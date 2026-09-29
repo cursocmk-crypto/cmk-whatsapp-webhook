@@ -1124,42 +1124,42 @@ def campanhas():
             "</tr>"
         )
 
-       total_contatos = len(unicos)
-    total_aptos = len(aptos)
+        total_contatos = len(unicos)
+        total_aptos = len(aptos)
 
-    status_contagem = {
-        "read": 0,
-        "delivered": 0,
-        "sent": 0,
-        "failed": 0
-    }
+        status_contagem = {
+            "read": 0,
+            "delivered": 0,
+            "sent": 0,
+            "failed": 0
+        }
 
-    processados = 0
+        processados = 0
 
-    for numero in unicos:
-        envio = ultimo_status.get(numero)
+        for numero in unicos:
+            envio = ultimo_status.get(numero)
 
-        if not envio:
-            continue
+            if not envio:
+                continue
 
-        processados += 1
-        status = (envio.get("status") or "").lower()
+            processados += 1
+            status = (envio.get("status") or "").lower()
 
-        if status in status_contagem:
-            status_contagem[status] += 1
+            if status in status_contagem:
+                status_contagem[status] += 1
 
-    restantes = max(total_aptos - processados, 0)
+        restantes = max(total_aptos - processados, 0)
 
-    resumo = (
-        f"Total: {total_contatos} · "
-        f"Processados: {processados} · "
-        f"Lidos: {status_contagem['read']} · "
-        f"Entregues: {status_contagem['delivered']} · "
-        f"Enviados: {status_contagem['sent']} · "
-        f"Falharam: {status_contagem['failed']} · "
-        f"Restantes: {restantes}"
-    )
-
+        resumo = (
+            f"Total: {total_contatos} · "
+            f"Processados: {processados} · "
+            f"Lidos: {status_contagem['read']} · "
+            f"Entregues: {status_contagem['delivered']} · "
+            f"Enviados: {status_contagem['sent']} · "
+            f"Falharam: {status_contagem['failed']} · "
+            f"Restantes: {restantes}"
+        )
+       
     return f"""
     <!DOCTYPE html>
     <html lang="pt-BR">
