@@ -1060,3 +1060,49 @@ def campanha_enviar_individual():
         )
 
     return "Não foi possível enviar o template.", 500
+
+
+    # =========================================================
+# REGISTRO DOS ENVIOS DE CAMPANHA
+# =========================================================
+
+def registrar_envio_campanha(
+    telefone,
+    nome,
+    template,
+    whatsapp_message_id,
+    status="enviado"
+):
+    url = f"{SUPABASE_URL}/rest/v1/envios_campanha"
+
+    dados = {
+        "telefone": telefone,
+        "nome": nome,
+        "template": template,
+        "whatsapp_message_id": whatsapp_message_id,
+        "status": status,
+        "status_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    try:
+        resposta = requests.post(
+            url,
+            headers={
+                **supabase_headers(),
+                "Prefer": "return=minimal"
+            },
+            json=dados,
+            timeout=15
+        )
+
+        if not resposta.ok:
+            print(
+                "ERRO REGISTRO CAMPANHA:",
+                resposta.status_code
+            )
+
+        return resposta.ok
+
+    except requests.RequestException:
+        print("FALHA AO REGISTRAR ENVIO DA CAMPANHA")
+        return False
