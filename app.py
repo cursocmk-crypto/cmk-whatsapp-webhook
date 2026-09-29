@@ -934,3 +934,55 @@ def teste_template():
 
     print("ERRO TEMPLATE:", resposta.status_code, resposta.text)
     return "Não foi possível enviar o template.", 500
+
+    # =========================================================
+# ENVIO DO TEMPLATE DE MARKETING
+# =========================================================
+
+def enviar_template_marketing(numero):
+    numero = "".join(c for c in numero if c.isdigit())
+
+    if not numero:
+        return 400, None
+
+    url = (
+        f"https://graph.facebook.com/v26.0/"
+        f"{PHONE_NUMBER_ID}/messages"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": numero,
+        "type": "template",
+        "template": {
+            "name": "cmk_curso_auxiliar_veterinaria",
+            "language": {
+                "code": "pt_BR"
+            }
+        }
+    }
+
+    try:
+        resposta = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=15
+        )
+    except requests.RequestException:
+        return 500, None
+
+    message_id = None
+
+    if resposta.ok:
+        try:
+            message_id = resposta.json()["messages"][0]["id"]
+        except (KeyError, IndexError, TypeError):
+            pass
+
+    return resposta.status_code, message_id
