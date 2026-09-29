@@ -511,10 +511,16 @@ def atendimento():
         </div>
 
         <form
-            class="caixa-envio"
-            method="POST"
-            action="/atendimento/enviar"
-        >
+    class="caixa-envio"
+    method="POST"
+    action="/atendimento/enviar"
+    onsubmit="
+        const botao = this.querySelector('button[type=submit]');
+        if (botao.disabled) return false;
+        botao.disabled = true;
+        botao.innerText = 'Enviando...';
+    "
+>
             <input
                 type="hidden"
                 name="telefone"
