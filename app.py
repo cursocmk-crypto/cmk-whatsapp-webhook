@@ -522,17 +522,12 @@ def atendimento():
             {bolhas}
         </div>
 
-        <form
-    class="caixa-envio"
-    method="POST"
-    action="/atendimento/enviar"
-    onsubmit="
-        const botao = this.querySelector('button[type=submit]');
-        if (botao.disabled) return false;
-        botao.disabled = true;
-        botao.innerText = 'Enviando...';
-    "
->
+               <form
+            class="caixa-envio"
+            method="POST"
+            action="/atendimento/enviar"
+            onsubmit="return enviarMensagemAjax(this);"
+        >
             <input
                 type="hidden"
                 name="telefone"
@@ -879,7 +874,57 @@ def atendimento():
             </section>
 
         </main>
+             <script>
+        async function enviarMensagemAjax(form) {{
+            const botao = form.querySelector('button[type="submit"]');
+            const textarea = form.querySelector('textarea[name="mensagem"]');
+            const historico = document.querySelector('.historico');
 
+            if (botao.disabled) {{
+                return false;
+            }}
+
+            const mensagem = textarea.value.trim();
+
+            if (!mensagem) {{
+                return false;
+            }}
+
+            botao.disabled = true;
+            botao.innerText = 'Enviando...';
+
+            try {{
+                const resposta = await fetch(form.action, {{
+                    method: 'POST',
+                    body: new FormData(form)
+                }});
+
+                if (!resposta.ok) {{
+                    throw new Error('Falha no envio');
+                }}
+
+                const balao = document.createElement('div');
+                balao.className = 'mensagem-balao saida';
+                balao.textContent = mensagem;
+
+                if (historico) {{
+                    historico.appendChild(balao);
+                    historico.scrollTop = historico.scrollHeight;
+                }}
+
+                textarea.value = '';
+
+            }} catch (erro) {{
+                alert('Não foi possível enviar a mensagem. Tente novamente.');
+            }} finally {{
+                botao.disabled = false;
+                botao.innerText = 'Enviar';
+                textarea.focus();
+            }}
+
+            return false;
+        }}
+        </script>        
     </body>
     </html>
     """, 200
