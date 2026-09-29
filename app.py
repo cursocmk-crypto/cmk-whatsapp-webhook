@@ -892,7 +892,7 @@ as autorizações, registrar os envios e testar o descadastro.</div>
 # TESTE DO TEMPLATE DE MARKETING
 # =========================================================
 
-@app.route("/teste-template", methods=["POST"])
+@app.route("/teste-template", methods=["GET"])
 def teste_template():
     if not autenticado():
         return exigir_login()
