@@ -853,133 +853,59 @@ def atendimento():
 # CAMPANHAS
 # =========================================================
 
+TEMPLATE_MARKETING = "cmk_curso_auxiliar_veterinaria"
+
+
 def buscar_contatos_campanha():
-    """Consulta apenas campos necessários; não expõe credenciais no navegador."""
     url = f"{SUPABASE_URL}/rest/v1/contatos_cmk"
+
     try:
         resposta = requests.get(
             url,
             headers=supabase_headers(),
-            params={"select": "telefone,nome,autorizado,descadastrado,origem_autorizacao", "limit": "1000"},
-            timeout=15,
+            params={
+                "select": "telefone,nome,autorizado,descadastrado,origem_autorizacao",
+                "limit": "1000"
+            },
+            timeout=15
         )
+
         if not resposta.ok:
             print("ERRO CONTATOS:", resposta.status_code)
             return None
+
         return resposta.json()
-    except requests.RequestException as erro:
-        print("ERRO CONEXAO CONTATOS:", type(erro).__name__)
+
+    except requests.RequestException:
+        print("ERRO CONEXAO CONTATOS")
         return None
 
 
-@app.route("/campanhas", methods=["GET"])
-def campanhas():
-    if not autenticado():
-        return exigir_login()
+def buscar_envios_campanha():
+    url = f"{SUPABASE_URL}/rest/v1/envios_campanha"
 
-    contatos = buscar_contatos_campanha()
-    if contatos is None:
-        resumo = "Não foi possível consultar os contatos. Verifique as permissões no Supabase."
-        linhas = ""
-    else:
-        unicos = {}
-        for contato in contatos:
-            telefone = "".join(c for c in (contato.get("telefone") or "") if c.isdigit())
-            if telefone:
-                unicos[telefone] = contato
-        aptos = [c for c in unicos.values() if c.get("autorizado") is True and c.get("descadastrado") is not True]
-        resumo = f"{len(unicos)} contatos únicos cadastrados · {len(aptos)} marcados como autorizados e ativos"
-        linhas = "".join(
-    "<tr><td>" + html.escape(c.get("nome") or "Sem nome") +
-    "</td><td>" + html.escape(numero) +
-    "</td><td>" + ("Sim" if c.get("autorizado") is True else "Não") +
-    "</td><td>" + ("Sim" if c.get("descadastrado") is True else "Não") +
-    "</td><td>" +
-    (
-        '<form method="POST" action="/campanhas/enviar-individual">'
-        '<input type="hidden" name="telefone" value="' + html.escape(numero) + '">'
-        '<button type="submit">Enviar teste</button>'
-        '</form>'
-        if c.get("autorizado") is True and c.get("descadastrado") is not True
-        else "Bloqueado"
-    ) +
-    "</td></tr>"
-    for numero, c in list(unicos.items())[:100]
-)
+    try:
+        resposta = requests.get(
+            url,
+            headers=supabase_headers(),
+            params={
+                "select": "telefone,nome,template,status,status_at,erro",
+                "order": "created_at.desc",
+                "limit": "100"
+            },
+            timeout=15
+        )
 
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CMK · Campanhas</title>
-<style>
-body{{font-family:Arial,sans-serif;background:#f3f4f6;color:#111827;margin:0}}
-header{{background:#111827;color:white;padding:22px}}
-main{{max-width:1000px;margin:30px auto;background:white;padding:26px;border-radius:12px}}
-a{{color:#124c84}} .aviso{{background:#fff3ce;padding:18px;border-radius:9px;margin:20px 0}}
-table{{border-collapse:collapse;width:100%}}td,th{{padding:11px;text-align:left;border-bottom:1px solid #ddd}}
-.tabela{{overflow-x:auto}}@media(max-width:600px){{main{{margin:8px;padding:14px}}}}
-</style></head><body><header><h2>CMK · Campanhas</h2></header>
-<main><a href="/atendimento">← Voltar ao atendimento</a>
-<h1>Contatos da campanha</h1><p>{html.escape(resumo)}</p>
-<div class="aviso"><strong>Disparos ainda desativados.</strong><br>
-Aguardamos a aprovação do modelo de Marketing pela Meta. Antes de enviar, vamos validar
-as autorizações, registrar os envios e testar o descadastro.</div>
-<h2>Prévia dos contatos (até 100)</h2>
-<div class="tabela"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Autorizado</th><th>Descadastrado</th><th>Ação</th></tr></thead>
-<tbody>{linhas}</tbody></table></div>
-</main></body></html>""", 200
+        if not resposta.ok:
+            print("ERRO HISTORICO:", resposta.status_code)
+            return []
 
+        return resposta.json()
 
-# =========================================================
-# TESTE DO TEMPLATE DE MARKETING
-# =========================================================
+    except requests.RequestException:
+        print("ERRO CONEXAO HISTORICO")
+        return []
 
-@app.route("/teste-template", methods=["GET"])
-def teste_template():
-    if not autenticado():
-        return exigir_login()
-
-    if not TEST_PHONE:
-        return "Número de teste não configurado.", 500
-
-    url = (
-        f"https://graph.facebook.com/v26.0/"
-        f"{PHONE_NUMBER_ID}/messages"
-    )
-
-    headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": TEST_PHONE,
-        "type": "template",
-        "template": {
-            "name": "cmk_curso_auxiliar_veterinaria",
-            "language": {
-                "code": "pt_BR"
-            }
-        }
-    }
-
-    resposta = requests.post(
-        url,
-        headers=headers,
-        json=payload,
-        timeout=15
-    )
-
-    if resposta.ok:
-        return "Template de teste enviado com sucesso!", 200
-
-    print("ERRO TEMPLATE:", resposta.status_code, resposta.text)
-    return "Não foi possível enviar o template.", 500
-
-    # =========================================================
-# ENVIO DO TEMPLATE DE MARKETING
-# =========================================================
 
 def enviar_template_marketing(numero):
     numero = "".join(c for c in numero if c.isdigit())
@@ -1002,7 +928,7 @@ def enviar_template_marketing(numero):
         "to": numero,
         "type": "template",
         "template": {
-            "name": "cmk_curso_auxiliar_veterinaria",
+            "name": TEMPLATE_MARKETING,
             "language": {
                 "code": "pt_BR"
             }
@@ -1016,6 +942,7 @@ def enviar_template_marketing(numero):
             json=payload,
             timeout=15
         )
+
     except requests.RequestException:
         return 500, None
 
@@ -1026,86 +953,15 @@ def enviar_template_marketing(numero):
             message_id = resposta.json()["messages"][0]["id"]
         except (KeyError, IndexError, TypeError):
             pass
+    else:
+        print(
+            "ERRO TEMPLATE:",
+            resposta.status_code,
+            resposta.text[:500]
+        )
 
     return resposta.status_code, message_id
 
-
-# =========================================================
-# ENVIO INDIVIDUAL DE CAMPANHA
-# =========================================================
-
-@app.route("/campanhas/enviar-individual", methods=["POST"])
-def campanha_enviar_individual():
-    if not autenticado():
-        return exigir_login()
-
-    telefone = request.form.get("telefone", "").strip()
-
-    telefone = "".join(
-        c for c in telefone
-        if c.isdigit()
-    )
-
-    if not telefone:
-        return "Telefone inválido.", 400
-
-    # Confirma no Supabase se este contato está autorizado
-    # e se não solicitou descadastro.
-    try:
-        resposta_contato = requests.get(
-            f"{SUPABASE_URL}/rest/v1/contatos_cmk",
-            headers=supabase_headers(),
-            params={
-                "select": "telefone,nome,autorizado,descadastrado",
-                "telefone": f"eq.{telefone}",
-                "limit": "1"
-            },
-            timeout=15
-        )
-
-        if not resposta_contato.ok:
-            return "Não foi possível validar o contato.", 500
-
-        contatos = resposta_contato.json()
-
-    except requests.RequestException:
-        return "Não foi possível validar o contato.", 500
-
-    if not contatos:
-        return "Contato não encontrado.", 404
-
-    contato = contatos[0]
-
-    if contato.get("autorizado") is not True:
-        return "Envio bloqueado: contato não autorizado.", 403
-
-    if contato.get("descadastrado") is True:
-        return "Envio bloqueado: contato descadastrado.", 403
-
-    status, message_id = enviar_template_marketing(
-        telefone
-    )
-
-    if 200 <= status < 300:
-        registrar_envio_campanha(
-            telefone=telefone,
-            nome=contato.get("nome") or "",
-            template="cmk_curso_auxiliar_veterinaria",
-            whatsapp_message_id=message_id,
-            status="enviado"
-        )
-
-        return (
-            "Template enviado com sucesso para este contato!",
-            200
-        )
-
-    return "Não foi possível enviar o template.", 500
-
-
-    # =========================================================
-# REGISTRO DOS ENVIOS DE CAMPANHA
-# =========================================================
 
 def registrar_envio_campanha(
     telefone,
@@ -1147,3 +1003,430 @@ def registrar_envio_campanha(
     except requests.RequestException:
         print("FALHA AO REGISTRAR ENVIO DA CAMPANHA")
         return False
+
+
+# =========================================================
+# PAINEL DE CAMPANHAS
+# =========================================================
+
+@app.route("/campanhas", methods=["GET"])
+def campanhas():
+    if not autenticado():
+        return exigir_login()
+
+    contatos = buscar_contatos_campanha()
+    envios = buscar_envios_campanha()
+
+    if contatos is None:
+        return "Não foi possível consultar os contatos.", 500
+
+    unicos = {}
+
+    for contato in contatos:
+        numero = "".join(
+            c for c in (contato.get("telefone") or "")
+            if c.isdigit()
+        )
+
+        if numero:
+            unicos[numero] = contato
+
+    aptos = [
+        (numero, contato)
+        for numero, contato in unicos.items()
+        if contato.get("autorizado") is True
+        and contato.get("descadastrado") is not True
+    ]
+
+    ultimo_status = {}
+
+    for envio in envios:
+        numero = "".join(
+            c for c in (envio.get("telefone") or "")
+            if c.isdigit()
+        )
+
+        if numero and numero not in ultimo_status:
+            ultimo_status[numero] = envio
+
+    linhas = ""
+
+    for numero, contato in list(unicos.items())[:100]:
+        nome = html.escape(
+            contato.get("nome") or "Sem nome"
+        )
+
+        numero_seguro = html.escape(numero)
+
+        autorizado = (
+            "Sim"
+            if contato.get("autorizado") is True
+            else "Não"
+        )
+
+        descadastrado = (
+            "Sim"
+            if contato.get("descadastrado") is True
+            else "Não"
+        )
+
+        envio = ultimo_status.get(numero)
+
+        if envio:
+            status = html.escape(
+                envio.get("status") or "-"
+            )
+        else:
+            status = "Nunca enviado"
+
+        if (
+            contato.get("autorizado") is True
+            and contato.get("descadastrado") is not True
+        ):
+            acao = (
+                '<form method="POST" '
+                'action="/campanhas/enviar-individual">'
+                '<input type="hidden" name="telefone" value="'
+                + numero_seguro +
+                '">'
+                '<button type="submit">Enviar</button>'
+                '</form>'
+            )
+        else:
+            acao = "Bloqueado"
+
+        linhas += (
+            "<tr>"
+            f"<td>{nome}</td>"
+            f"<td>{numero_seguro}</td>"
+            f"<td>{autorizado}</td>"
+            f"<td>{descadastrado}</td>"
+            f"<td><strong>{status}</strong></td>"
+            f"<td>{acao}</td>"
+            "</tr>"
+        )
+
+    resumo = (
+        f"{len(unicos)} contatos únicos · "
+        f"{len(aptos)} autorizados e ativos"
+    )
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+        >
+        <title>CMK · Campanhas</title>
+
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background: #f3f4f6;
+                color: #111827;
+                margin: 0;
+            }}
+
+            header {{
+                background: #111827;
+                color: white;
+                padding: 22px;
+            }}
+
+            main {{
+                max-width: 1100px;
+                margin: 30px auto;
+                background: white;
+                padding: 26px;
+                border-radius: 12px;
+            }}
+
+            a {{
+                color: #124c84;
+            }}
+
+            .resumo {{
+                background: #eef2ff;
+                padding: 18px;
+                border-radius: 9px;
+                margin: 20px 0;
+            }}
+
+            .teste {{
+                background: #fff7d6;
+                padding: 18px;
+                border-radius: 9px;
+                margin: 20px 0;
+            }}
+
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+            }}
+
+            td, th {{
+                padding: 11px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }}
+
+            button {{
+                border: 0;
+                border-radius: 7px;
+                padding: 9px 13px;
+                background: #111827;
+                color: white;
+                cursor: pointer;
+                font-weight: bold;
+            }}
+
+            .botao-lote {{
+                padding: 12px 18px;
+            }}
+
+            .tabela {{
+                overflow-x: auto;
+            }}
+
+            @media(max-width: 600px) {{
+                main {{
+                    margin: 8px;
+                    padding: 14px;
+                }}
+            }}
+        </style>
+    </head>
+
+    <body>
+
+        <header>
+            <h2>CMK · Campanhas</h2>
+        </header>
+
+        <main>
+
+            <a href="/atendimento">
+                ← Voltar ao atendimento
+            </a>
+
+            <h1>Campanha WhatsApp</h1>
+
+            <div class="resumo">
+                <strong>{html.escape(resumo)}</strong><br><br>
+                Template ativo:
+                <strong>
+                    cmk_curso_auxiliar_veterinaria
+                </strong>
+            </div>
+
+            <div class="teste">
+                <strong>Teste controlado em lote</strong>
+                <p>
+                    Envia o template somente para os primeiros
+                    5 contatos autorizados e ativos.
+                </p>
+
+                <form
+                    method="POST"
+                    action="/campanhas/enviar-lote-teste"
+                    onsubmit="return confirm(
+                        'Confirmar o envio para até 5 contatos?'
+                    );"
+                >
+                    <button
+                        class="botao-lote"
+                        type="submit"
+                    >
+                        Enviar para até 5 contatos
+                    </button>
+                </form>
+            </div>
+
+            <h2>Contatos</h2>
+
+            <div class="tabela">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Autorizado</th>
+                            <th>Descadastrado</th>
+                            <th>Último status</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {linhas}
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+
+    </body>
+    </html>
+    """, 200
+
+
+# =========================================================
+# ENVIO INDIVIDUAL
+# =========================================================
+
+@app.route("/campanhas/enviar-individual", methods=["POST"])
+def campanha_enviar_individual():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.form.get("telefone", "").strip()
+
+    telefone = "".join(
+        c for c in telefone
+        if c.isdigit()
+    )
+
+    if not telefone:
+        return "Telefone inválido.", 400
+
+    try:
+        resposta_contato = requests.get(
+            f"{SUPABASE_URL}/rest/v1/contatos_cmk",
+            headers=supabase_headers(),
+            params={
+                "select": "telefone,nome,autorizado,descadastrado",
+                "telefone": f"eq.{telefone}",
+                "limit": "1"
+            },
+            timeout=15
+        )
+
+        if not resposta_contato.ok:
+            return "Não foi possível validar o contato.", 500
+
+        contatos = resposta_contato.json()
+
+    except requests.RequestException:
+        return "Não foi possível validar o contato.", 500
+
+    if not contatos:
+        return "Contato não encontrado.", 404
+
+    contato = contatos[0]
+
+    if contato.get("autorizado") is not True:
+        return "Envio bloqueado: contato não autorizado.", 403
+
+    if contato.get("descadastrado") is True:
+        return "Envio bloqueado: contato descadastrado.", 403
+
+    status, message_id = enviar_template_marketing(
+        telefone
+    )
+
+    if 200 <= status < 300:
+        registrar_envio_campanha(
+            telefone=telefone,
+            nome=contato.get("nome") or "",
+            template=TEMPLATE_MARKETING,
+            whatsapp_message_id=message_id,
+            status="enviado"
+        )
+
+        return redirect("/campanhas")
+
+    return "Não foi possível enviar o template.", 500
+
+
+# =========================================================
+# TESTE EM LOTE - MÁXIMO 5 CONTATOS
+# =========================================================
+
+@app.route("/campanhas/enviar-lote-teste", methods=["POST"])
+def campanha_enviar_lote_teste():
+    if not autenticado():
+        return exigir_login()
+
+    contatos = buscar_contatos_campanha()
+
+    if contatos is None:
+        return "Não foi possível consultar os contatos.", 500
+
+    unicos = {}
+
+    for contato in contatos:
+        telefone = "".join(
+            c for c in (contato.get("telefone") or "")
+            if c.isdigit()
+        )
+
+        if telefone:
+            unicos[telefone] = contato
+
+    aptos = [
+        (telefone, contato)
+        for telefone, contato in unicos.items()
+        if contato.get("autorizado") is True
+        and contato.get("descadastrado") is not True
+    ]
+
+    enviados = 0
+    falhas = 0
+
+    for telefone, contato in aptos[:5]:
+        status, message_id = enviar_template_marketing(
+            telefone
+        )
+
+        if 200 <= status < 300:
+            registrar_envio_campanha(
+                telefone=telefone,
+                nome=contato.get("nome") or "",
+                template=TEMPLATE_MARKETING,
+                whatsapp_message_id=message_id,
+                status="enviado"
+            )
+
+            enviados += 1
+
+        else:
+            falhas += 1
+
+    return (
+        f"""
+        <h2>Teste concluído</h2>
+        <p>Envios aceitos pela API: {enviados}</p>
+        <p>Falhas imediatas: {falhas}</p>
+        <p>
+            <a href="/campanhas">
+                Voltar para Campanhas
+            </a>
+        </p>
+        """,
+        200
+    )
+
+
+# =========================================================
+# TESTE INTERNO DO TEMPLATE
+# =========================================================
+
+@app.route("/teste-template", methods=["POST"])
+def teste_template():
+    if not autenticado():
+        return exigir_login()
+
+    if not TEST_PHONE:
+        return "Número de teste não configurado.", 500
+
+    status, _ = enviar_template_marketing(
+        TEST_PHONE
+    )
+
+    if 200 <= status < 300:
+        return "Template de teste enviado com sucesso!", 200
+
+    return "Não foi possível enviar o template.", 500
