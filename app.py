@@ -437,6 +437,43 @@ def atendimento_enviar():
 # CENTRAL DE ATENDIMENTO
 # =========================================================
 
+@app.route("/atendimento/mensagens", methods=["GET"])
+def atendimento_mensagens():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.args.get("telefone", "").strip()
+
+    if not telefone:
+        return "", 400
+
+    mensagens = buscar_mensagens()
+    bolhas = ""
+
+    for item in mensagens:
+        if (item.get("telefone") or "") != telefone:
+            continue
+
+        texto = html.escape(
+            item.get("mensagem") or ""
+        )
+
+        direcao = item.get("direcao")
+
+        classe = (
+            "mensagem-balao saida"
+            if direcao == "saida"
+            else "mensagem-balao entrada"
+        )
+
+        bolhas += f"""
+        <div class="{classe}">
+            {texto}
+        </div>
+        """
+
+    return bolhas, 200        
+
 @app.route("/atendimento", methods=["GET"])
 def atendimento():
     if not autenticado():
@@ -995,6 +1032,51 @@ form.dataset.enviando = '1';
 
             return false;
         }}
+
+async function atualizarConversa() {{
+    const historico = document.querySelector('.historico');
+    const telefoneInput = document.querySelector(
+        'input[name="telefone"]'
+    );
+
+    if (!historico || !telefoneInput) {{
+        return;
+    }}
+
+    const telefone = telefoneInput.value;
+
+    try {{
+        const resposta = await fetch(
+            '/atendimento/mensagens?telefone=' +
+            encodeURIComponent(telefone)
+        );
+
+        if (!resposta.ok) {{
+            return;
+        }}
+
+        const htmlNovo = await resposta.text();
+
+        if (historico.innerHTML !== htmlNovo) {{
+            const estavaNoFinal =
+                historico.scrollHeight -
+                historico.scrollTop -
+                historico.clientHeight < 80;
+
+            historico.innerHTML = htmlNovo;
+
+            if (estavaNoFinal) {{
+                historico.scrollTop = historico.scrollHeight;
+            }}
+        }}
+
+    }} catch (erro) {{
+        console.log('Falha ao atualizar conversa');
+    }}
+}}
+
+setInterval(atualizarConversa, 2000);
+        
         </script>        
     </body>
     </html>
