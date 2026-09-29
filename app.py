@@ -1387,13 +1387,13 @@ aptos = [
     and telefone not in telefones_ja_processados
 ]
 
-    enviados = 0
-    falhas = 0
+enviados = 0
+falhas = 0
 
-    for telefone, contato in aptos[:5]:
-        status, message_id = enviar_template_marketing(
-            telefone
-        )
+for telefone, contato in aptos[:5]:
+    status, message_id = enviar_template_marketing(
+        telefone
+     )
 
         if 200 <= status < 300:
             registrar_envio_campanha(
