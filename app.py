@@ -282,7 +282,7 @@ def receber_webhook():
                         timeout=15,
                     )
                     print("DESCADASTRO STATUS:", resposta_saida.status_code)
-                except requests.RequestException:
+            except requests.RequestException:
                     print("FALHA AO REGISTRAR DESCADASTRO")
         for item_status in statuses:
             message_id_status = item_status.get("id")
@@ -308,34 +308,33 @@ def receber_webhook():
                     },
                     timeout=15
                 )
-
                 resposta_mensagem = requests.patch(
-    f"{SUPABASE_URL}/rest/v1/mensagens",
-    headers={
-        **supabase_headers(),
-        "Prefer": "return=minimal"
-    },
-    params={
-        "whatsapp_message_id": f"eq.{message_id_status}"
-    },
-    json={
-        "status": status_meta,
-        "status_at": datetime.now(timezone.utc).isoformat()
-    },
-    timeout=15
-)
+                f"{SUPABASE_URL}/rest/v1/mensagens",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "return=minimal"
+                },
+                params={
+                    "whatsapp_message_id": f"eq.{message_id_status}"
+                },
+                json={
+                    "status": status_meta,
+                    "status_at": datetime.now(timezone.utc).isoformat()
+                },
+                timeout=15
+            )
 
-          print(
-    "STATUS META:",
-    status_meta,
-    "CAMPANHA:",
-    resposta_status.status_code,
-    "ATENDIMENTO:",
-    resposta_mensagem.status_code
-)
+            print(
+                "STATUS META:",
+                status_meta,
+                "CAMPANHA:",
+                resposta_status.status_code,
+                "ATENDIMENTO:",
+                resposta_mensagem.status_code
+            )
 
-            except requests.RequestException:
-                print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
+        except requests.RequestException:
+            print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
     except (KeyError, IndexError, TypeError) as erro:
         print("WEBHOOK IGNORADO:", erro)
 
