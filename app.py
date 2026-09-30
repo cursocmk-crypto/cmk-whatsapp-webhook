@@ -573,90 +573,89 @@ def atendimento_conversas():
         reverse=True
     )
 
-   for contato in contatos_ordenados:
-    telefone = contato["telefone"]
-    nome = html.escape(contato["nome"])
-    telefone_seguro = html.escape(telefone)
+    for contato in contatos_ordenados:
+        telefone = contato["telefone"]
+        nome = html.escape(contato["nome"])
+        telefone_seguro = html.escape(telefone)
 
-    ultima = contato["mensagens"][-1]
+        ultima = contato["mensagens"][-1]
 
-    ultima_texto = html.escape(
-        (ultima.get("mensagem") or "")[:45]
-    )
-
-    ultima_data = ultima.get("created_at") or ""
-    ultima_visualizacao = visualizacoes.get(telefone)
-
-    quantidade_novas = 0
-
-    for mensagem_item in contato["mensagens"]:
-        if mensagem_item.get("direcao") != "entrada":
-            continue
-
-        data_mensagem = (
-            mensagem_item.get("created_at") or ""
+        ultima_texto = html.escape(
+            (ultima.get("mensagem") or "")[:45]
         )
 
-        if (
-            not ultima_visualizacao
-            or data_mensagem > ultima_visualizacao
-        ):
-            quantidade_novas += 1
+        ultima_visualizacao = visualizacoes.get(telefone)
+        quantidade_novas = 0
 
-    indicador = ""
+        for mensagem_item in contato["mensagens"]:
+            if mensagem_item.get("direcao") != "entrada":
+                continue
 
-    if quantidade_novas > 0:
-        texto_contador = (
-            "99+"
-            if quantidade_novas > 99
-            else str(quantidade_novas)
-        )
+            data_mensagem = (
+                mensagem_item.get("created_at") or ""
+            )
 
-        indicador = f"""
-            <span style="
-                min-width:20px;
-                height:20px;
-                padding:0 6px;
-                border-radius:10px;
-                background:#16a34a;
-                color:white;
-                font-size:11px;
-                font-weight:700;
-                display:inline-flex;
-                align-items:center;
-                justify-content:center;
-            ">
-                {texto_contador}
-            </span>
-        """
+            if (
+                not ultima_visualizacao
+                or data_mensagem > ultima_visualizacao
+            ):
+                quantidade_novas += 1
 
-    peso = "700" if quantidade_novas > 0 else "600"
-        lista += f"""
-        <a class="contato"
-           href="/atendimento?telefone={telefone_seguro}"
-           style="position:relative;">
-            <div class="avatar">
-                {nome[:1].upper()}
-            </div>
+        indicador = ""
 
-            <div class="contato-info"
-                 style="flex:1;">
-                <div style="
-                    display:flex;
+        if quantidade_novas > 0:
+            texto_contador = (
+                "99+"
+                if quantidade_novas > 99
+                else str(quantidade_novas)
+            )
+
+            indicador = f"""
+                <span style="
+                    min-width:20px;
+                    height:20px;
+                    padding:0 6px;
+                    border-radius:10px;
+                    background:#16a34a;
+                    color:white;
+                    font-size:11px;
+                    font-weight:700;
+                    display:inline-flex;
                     align-items:center;
-                    gap:8px;
+                    justify-content:center;
                 ">
-                    <strong style="font-weight:{peso};">
-                        {nome}
-                    </strong>
-                    {indicador}
+                    {texto_contador}
+                </span>
+            """
+
+        peso = "700" if quantidade_novas > 0 else "600"
+
+        lista += f"""
+            <a class="contato"
+               href="/atendimento?telefone={telefone_seguro}"
+               style="position:relative;">
+                <div class="avatar">
+                    {nome[:1].upper()}
                 </div>
 
-                <span style="font-weight:{peso};">
-                    {ultima_texto}
-                </span>
-            </div>
-        </a>
+                <div class="contato-info"
+                     style="flex:1;">
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        gap:8px;
+                    ">
+                        <strong style="font-weight:{peso};">
+                            {nome}
+                        </strong>
+                        {indicador}
+                    </div>
+
+                    <span style="font-weight:{peso};">
+                        {ultima_texto}
+                    </span>
+                </div>
+            </a>
         """
 
     return lista, 200
