@@ -573,7 +573,7 @@ def atendimento_conversas():
         reverse=True
     )
 
-    for contato in contatos_ordenados:
+   for contato in contatos_ordenados:
     telefone = contato["telefone"]
     nome = html.escape(contato["nome"])
     telefone_seguro = html.escape(telefone)
@@ -593,7 +593,9 @@ def atendimento_conversas():
         if mensagem_item.get("direcao") != "entrada":
             continue
 
-        data_mensagem = mensagem_item.get("created_at") or ""
+        data_mensagem = (
+            mensagem_item.get("created_at") or ""
+        )
 
         if (
             not ultima_visualizacao
@@ -628,8 +630,7 @@ def atendimento_conversas():
             </span>
         """
 
-        peso = "700" if nova else "600"
-
+    peso = "700" if quantidade_novas > 0 else "600"
         lista += f"""
         <a class="contato"
            href="/atendimento?telefone={telefone_seguro}"
@@ -660,6 +661,39 @@ def atendimento_conversas():
 
     return lista, 200
 
+@app.route("/atendimento/visualizar", methods=["POST"])
+def atendimento_visualizar():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.form.get("telefone", "").strip()
+
+    if not telefone:
+        return "Telefone obrigatório.", 400
+
+    try:
+        resposta = requests.post(
+            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            json={
+                "telefone": telefone,
+                "ultima_visualizacao": datetime.now(
+                    timezone.utc
+                ).isoformat()
+            },
+            timeout=10
+        )
+
+        if not resposta.ok:
+            return "Falha ao registrar visualização.", 500
+
+    except requests.RequestException:
+        return "Falha ao registrar visualização.", 500
+
+    return "", 204
 
 @app.route("/atendimento/mensagens", methods=["GET"])
 def atendimento_mensagens():
