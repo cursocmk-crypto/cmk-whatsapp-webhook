@@ -583,30 +583,49 @@ def atendimento_conversas():
             (ultima.get("mensagem") or "")[:45]
         )
 
-        ultima_data = ultima.get("created_at") or ""
-        ultima_visualizacao = visualizacoes.get(telefone)
+   ultima_data = ultima.get("created_at") or ""
+ultima_visualizacao = visualizacoes.get(telefone)
 
-        nova = (
-            ultima.get("direcao") == "entrada"
-            and (
-                not ultima_visualizacao
-                or ultima_data > ultima_visualizacao
-            )
-        )
+quantidade_novas = 0
 
-        indicador = ""
+for mensagem_item in contato["mensagens"]:
+    if mensagem_item.get("direcao") != "entrada":
+        continue
 
-        if nova:
-            indicador = """
-            <span style="
-                width:10px;
-                height:10px;
-                background:#16a34a;
-                border-radius:50%;
-                display:inline-block;
-                margin-left:auto;
-            "></span>
-            """
+    data_mensagem = mensagem_item.get("created_at") or ""
+
+    if (
+        not ultima_visualizacao
+        or data_mensagem > ultima_visualizacao
+    ):
+        quantidade_novas += 1
+
+       indicador = ""
+
+if quantidade_novas > 0:
+    texto_contador = (
+        "99+"
+        if quantidade_novas > 99
+        else str(quantidade_novas)
+    )
+
+    indicador = f"""
+        <span style="
+            min-width:20px;
+            height:20px;
+            padding:0 6px;
+            border-radius:10px;
+            background:#16a34a;
+            color:white;
+            font-size:11px;
+            font-weight:700;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+        ">
+            {texto_contador}
+        </span>
+    """
 
         peso = "700" if nova else "600"
 
@@ -758,6 +777,29 @@ def atendimento():
 
     if not telefone_ativo and contatos:
         telefone_ativo = list(contatos.keys())[-1]
+
+        # Marca a conversa aberta como visualizada
+if telefone_ativo:
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            json={
+                "telefone": telefone_ativo,
+                "ultima_visualizacao": datetime.now(
+                    timezone.utc
+                ).isoformat()
+            },
+            timeout=10
+        )
+    except requests.RequestException:
+        print(
+            "FALHA AO REGISTRAR VISUALIZACAO:",
+            telefone_ativo
+        )
 
     lista_contatos = ""
 
@@ -1386,6 +1428,15 @@ async function atualizarConversa() {{
                     ultimaMensagem &&
                     ultimaMensagem.classList.contains('entrada')
                 ) {{
+                    const dadosVisualizacao = new FormData();
+dadosVisualizacao.append('telefone', telefone);
+
+fetch('/atendimento/visualizar', {{
+    method: 'POST',
+    body: dadosVisualizacao
+}}).catch(() => {{
+    console.log('Falha ao marcar conversa como visualizada');
+}});
                     const aviso = document.createElement('div');
 
                     aviso.textContent = '● Mensagem nova';
