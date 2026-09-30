@@ -1364,30 +1364,29 @@ async function atualizarConversa() {{
     }}
 }}
 
-async function atualizarListaConversas() {
-    try {
+async function atualizarListaConversas() {{
+    try {{
         const resposta = await fetch('/atendimento/conversas');
 
-        if (!resposta.ok) {
+        if (!resposta.ok) {{
             return;
-        }
+        }}
 
         const htmlNovo = await resposta.text();
         const lista = document.querySelector('.lista-contatos');
 
-        if (!lista) {
+        if (!lista) {{
             return;
-        }
+        }}
 
-        if (lista.innerHTML !== htmlNovo) {
+        if (lista.innerHTML !== htmlNovo) {{
             lista.innerHTML = htmlNovo;
-        }
+        }}
 
-    } catch (erro) {
+    }} catch (erro) {{
         console.log('Falha ao atualizar lista de conversas');
-    }
-}
-
+    }}
+}}
 
 setInterval(atualizarConversa, 2000);
 setInterval(atualizarListaConversas, 2000);
