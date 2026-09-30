@@ -812,28 +812,28 @@ def atendimento():
     if not telefone_ativo and contatos:
         telefone_ativo = list(contatos.keys())[-1]
 
-        # Marca a conversa aberta como visualizada
-if telefone_ativo:
-    try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
-            headers={
-                **supabase_headers(),
-                "Prefer": "resolution=merge-duplicates,return=minimal"
-            },
-            json={
-                "telefone": telefone_ativo,
-                "ultima_visualizacao": datetime.now(
-                    timezone.utc
-                ).isoformat()
-            },
-            timeout=10
-        )
-    except requests.RequestException:
-        print(
-            "FALHA AO REGISTRAR VISUALIZACAO:",
-            telefone_ativo
-        )
+            # Marca a conversa aberta como visualizada
+    if telefone_ativo:
+        try:
+            requests.post(
+                f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "resolution=merge-duplicates,return=minimal"
+                },
+                json={
+                    "telefone": telefone_ativo,
+                    "ultima_visualizacao": datetime.now(
+                        timezone.utc
+                    ).isoformat()
+                },
+                timeout=10
+            )
+        except requests.RequestException:
+            print(
+                "FALHA AO REGISTRAR VISUALIZACAO:",
+                telefone_ativo
+            )
 
     lista_contatos = ""
 
