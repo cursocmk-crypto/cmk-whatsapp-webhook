@@ -457,8 +457,8 @@ def atendimento_enviar():
 
         # Chave duplicada: este envio já está em processamento
         # ou já foi processado.
-       if resposta_trava.status_code == 409:
-    return "Mensagem já processada.", 200
+        if resposta_trava.status_code == 409:
+            return "Mensagem já processada.", 200
 
         if not resposta_trava.ok:
             print(
