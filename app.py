@@ -1,7 +1,7 @@
 import os
 import html
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Flask, request, redirect, Response
 import requests
 import uuid
@@ -111,7 +111,7 @@ def buscar_mensagens():
     url = f"{SUPABASE_URL}/rest/v1/mensagens"
 
     parametros = {
-        "select": "telefone,nome_contato,mensagem,direcao,whatsapp_message_id,created_at",
+       "select": "telefone,nome_contato,mensagem,direcao,whatsapp_message_id,created_at,status,status_at",
         "order": "created_at.desc",
         "limit": "500"
     }
@@ -309,11 +309,30 @@ def receber_webhook():
                     timeout=15
                 )
 
-                print(
-                    "STATUS CAMPANHA:",
-                    status_meta,
-                    resposta_status.status_code
-                )
+                resposta_mensagem = requests.patch(
+    f"{SUPABASE_URL}/rest/v1/mensagens",
+    headers={
+        **supabase_headers(),
+        "Prefer": "return=minimal"
+    },
+    params={
+        "whatsapp_message_id": f"eq.{message_id_status}"
+    },
+    json={
+        "status": status_meta,
+        "status_at": datetime.now(timezone.utc).isoformat()
+    },
+    timeout=15
+)
+
+          print(
+    "STATUS META:",
+    status_meta,
+    "CAMPANHA:",
+    resposta_status.status_code,
+    "ATENDIMENTO:",
+    resposta_mensagem.status_code
+)
 
             except requests.RequestException:
                 print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
@@ -578,23 +597,58 @@ def atendimento():
         bolhas = ""
 
         for item in contato["mensagens"]:
-            texto = html.escape(
-                item.get("mensagem") or ""
+    texto = html.escape(
+        item.get("mensagem") or ""
+    )
+
+    direcao = item.get("direcao")
+    status = (item.get("status") or "").lower()
+    criado_em = item.get("created_at") or ""
+
+    horario = ""
+
+    if criado_em:
+        try:
+            data_msg = datetime.fromisoformat(
+                criado_em.replace("Z", "+00:00")
             )
+            horario = data_msg.astimezone(
+                timezone(timedelta(hours=-3))
+            ).strftime("%H:%M")
+        except (ValueError, TypeError):
+            horario = ""
 
-            direcao = item.get("direcao")
+    classe = (
+        "mensagem-balao saida"
+        if direcao == "saida"
+        else "mensagem-balao entrada"
+    )
 
-            classe = (
-                "mensagem-balao saida"
-                if direcao == "saida"
-                else "mensagem-balao entrada"
-            )
+    status_texto = ""
 
-            bolhas += f"""
-            <div class="{classe}">
-                {texto}
-            </div>
-            """
+    if direcao == "saida":
+        if status == "read":
+            status_texto = "✓✓ Lida"
+        elif status == "delivered":
+            status_texto = "✓✓ Entregue"
+        elif status == "sent":
+            status_texto = "✓ Enviada"
+        elif status == "failed":
+            status_texto = "⚠ Falhou"
+        else:
+            status_texto = "✓ Enviada"
+
+    detalhes = horario
+
+    if status_texto:
+        detalhes = f"{horario} · {status_texto}" if horario else status_texto
+
+    bolhas += f"""
+    <div class="{classe}">
+        <div>{texto}</div>
+        <div class="mensagem-info">{detalhes}</div>
+    </div>
+    """
 
         area_conversa = f"""
         <div class="cabecalho-conversa">
