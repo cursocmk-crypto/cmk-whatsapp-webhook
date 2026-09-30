@@ -282,7 +282,7 @@ def receber_webhook():
                         timeout=15,
                     )
                     print("DESCADASTRO STATUS:", resposta_saida.status_code)
-            except requests.RequestException:
+                except requests.RequestException:
                     print("FALHA AO REGISTRAR DESCADASTRO")
         for item_status in statuses:
             message_id_status = item_status.get("id")
