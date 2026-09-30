@@ -510,6 +510,137 @@ def atendimento_enviar():
 # CENTRAL DE ATENDIMENTO
 # =========================================================
 
+@app.route("/atendimento/conversas", methods=["GET"])
+def atendimento_conversas():
+    if not autenticado():
+        return exigir_login()
+
+    mensagens = buscar_mensagens()
+    contatos = {}
+
+    for item in mensagens:
+        telefone = item.get("telefone") or ""
+
+        if not telefone:
+            continue
+
+        nome = item.get("nome_contato") or "Contato"
+
+        if telefone not in contatos:
+            contatos[telefone] = {
+                "nome": nome,
+                "telefone": telefone,
+                "mensagens": []
+            }
+
+        if nome and nome != "Contato":
+            contatos[telefone]["nome"] = nome
+
+        contatos[telefone]["mensagens"].append(item)
+
+    # Busca quando cada conversa foi visualizada
+    visualizacoes = {}
+
+    try:
+        resposta = requests.get(
+            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+            headers=supabase_headers(),
+            params={
+                "select": "telefone,ultima_visualizacao"
+            },
+            timeout=15
+        )
+
+        if resposta.ok:
+            for item in resposta.json():
+                visualizacoes[item["telefone"]] = (
+                    item.get("ultima_visualizacao")
+                )
+
+    except requests.RequestException:
+        pass
+
+    lista = ""
+
+    # Mais recentes primeiro
+    contatos_ordenados = sorted(
+        contatos.values(),
+        key=lambda c: (
+            c["mensagens"][-1].get("created_at") or ""
+            if c["mensagens"]
+            else ""
+        ),
+        reverse=True
+    )
+
+    for contato in contatos_ordenados:
+        telefone = contato["telefone"]
+        nome = html.escape(contato["nome"])
+        telefone_seguro = html.escape(telefone)
+
+        ultima = contato["mensagens"][-1]
+        ultima_texto = html.escape(
+            (ultima.get("mensagem") or "")[:45]
+        )
+
+        ultima_data = ultima.get("created_at") or ""
+        ultima_visualizacao = visualizacoes.get(telefone)
+
+        nova = (
+            ultima.get("direcao") == "entrada"
+            and (
+                not ultima_visualizacao
+                or ultima_data > ultima_visualizacao
+            )
+        )
+
+        indicador = ""
+
+        if nova:
+            indicador = """
+            <span style="
+                width:10px;
+                height:10px;
+                background:#16a34a;
+                border-radius:50%;
+                display:inline-block;
+                margin-left:auto;
+            "></span>
+            """
+
+        peso = "700" if nova else "600"
+
+        lista += f"""
+        <a class="contato"
+           href="/atendimento?telefone={telefone_seguro}"
+           style="position:relative;">
+            <div class="avatar">
+                {nome[:1].upper()}
+            </div>
+
+            <div class="contato-info"
+                 style="flex:1;">
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:8px;
+                ">
+                    <strong style="font-weight:{peso};">
+                        {nome}
+                    </strong>
+                    {indicador}
+                </div>
+
+                <span style="font-weight:{peso};">
+                    {ultima_texto}
+                </span>
+            </div>
+        </a>
+        """
+
+    return lista, 200
+
+
 @app.route("/atendimento/mensagens", methods=["GET"])
 def atendimento_mensagens():
     if not autenticado():
