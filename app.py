@@ -650,59 +650,65 @@ def atendimento():
 
         bolhas = ""
 
-        for item in contato["mensagens"]:
-    texto = html.escape(
-        item.get("mensagem") or ""
-    )
-
-    direcao = item.get("direcao")
-    status = (item.get("status") or "").lower()
-    criado_em = item.get("created_at") or ""
-
-    horario = ""
-
-    if criado_em:
-        try:
-            data_msg = datetime.fromisoformat(
-                criado_em.replace("Z", "+00:00")
+             for item in contato["mensagens"]:
+            texto = html.escape(
+                item.get("mensagem") or ""
             )
-            horario = data_msg.astimezone(
-                timezone(timedelta(hours=-3))
-            ).strftime("%H:%M")
-        except (ValueError, TypeError):
+
+            direcao = item.get("direcao")
+            status = (item.get("status") or "").lower()
+            criado_em = item.get("created_at") or ""
+
             horario = ""
 
-    classe = (
-        "mensagem-balao saida"
-        if direcao == "saida"
-        else "mensagem-balao entrada"
-    )
+            if criado_em:
+                try:
+                    data_msg = datetime.fromisoformat(
+                        criado_em.replace("Z", "+00:00")
+                    )
 
-    status_texto = ""
+                    horario = data_msg.astimezone(
+                        timezone(timedelta(hours=-3))
+                    ).strftime("%H:%M")
 
-    if direcao == "saida":
-        if status == "read":
-            status_texto = "✓✓ Lida"
-        elif status == "delivered":
-            status_texto = "✓✓ Entregue"
-        elif status == "sent":
-            status_texto = "✓ Enviada"
-        elif status == "failed":
-            status_texto = "⚠ Falhou"
-        else:
-            status_texto = "✓ Enviada"
+                except (ValueError, TypeError):
+                    horario = ""
 
-    detalhes = horario
+            classe = (
+                "mensagem-balao saida"
+                if direcao == "saida"
+                else "mensagem-balao entrada"
+            )
 
-    if status_texto:
-        detalhes = f"{horario} · {status_texto}" if horario else status_texto
+            status_texto = ""
 
-    bolhas += f"""
-    <div class="{classe}">
-        <div>{texto}</div>
-        <div class="mensagem-info">{detalhes}</div>
-    </div>
-    """
+            if direcao == "saida":
+                if status == "read":
+                    status_texto = "✓✓ Lida"
+                elif status == "delivered":
+                    status_texto = "✓✓ Entregue"
+                elif status == "sent":
+                    status_texto = "✓ Enviada"
+                elif status == "failed":
+                    status_texto = "⚠ Falhou"
+                else:
+                    status_texto = "✓ Enviada"
+
+            detalhes = horario
+
+            if status_texto:
+                detalhes = (
+                    f"{horario} · {status_texto}"
+                    if horario
+                    else status_texto
+                )
+
+            bolhas += f"""
+            <div class="{classe}">
+                <div>{texto}</div>
+                <div class="mensagem-info">{detalhes}</div>
+            </div>
+            """
 
         area_conversa = f"""
         <div class="cabecalho-conversa">
