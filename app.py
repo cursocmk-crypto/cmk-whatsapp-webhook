@@ -284,31 +284,34 @@ def receber_webhook():
                     print("DESCADASTRO STATUS:", resposta_saida.status_code)
                 except requests.RequestException:
                     print("FALHA AO REGISTRAR DESCADASTRO")
-        for item_status in statuses:
-            message_id_status = item_status.get("id")
-            status_meta = item_status.get("status")
-            erros_meta = item_status.get("errors", [])
-            if not message_id_status or not status_meta:
-                continue
 
-            try:
-                resposta_status = requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/envios_campanha",
-                    headers={
-                        **supabase_headers(),
-                        "Prefer": "return=minimal"
-                    },
-                    params={
-                        "whatsapp_message_id": f"eq.{message_id_status}"
-                    },
-                    json={
-                        "status": status_meta,
-                        "status_at": datetime.now(timezone.utc).isoformat(),
-                        "erro": str(erros_meta) if erros_meta else None
-                    },
-                    timeout=15
-                )
-                resposta_mensagem = requests.patch(
+    for item_status in statuses:
+        message_id_status = item_status.get("id")
+        status_meta = item_status.get("status")
+        erros_meta = item_status.get("errors", [])
+
+        if not message_id_status or not status_meta:
+            continue
+
+        try:
+            resposta_status = requests.patch(
+                f"{SUPABASE_URL}/rest/v1/envios_campanha",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "return=minimal"
+                },
+                params={
+                    "whatsapp_message_id": f"eq.{message_id_status}"
+                },
+                json={
+                    "status": status_meta,
+                    "status_at": datetime.now(timezone.utc).isoformat(),
+                    "erro": str(erros_meta) if erros_meta else None
+                },
+                timeout=15
+            )
+
+            resposta_mensagem = requests.patch(
                 f"{SUPABASE_URL}/rest/v1/mensagens",
                 headers={
                     **supabase_headers(),
@@ -335,6 +338,7 @@ def receber_webhook():
 
         except requests.RequestException:
             print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
+    
     except (KeyError, IndexError, TypeError) as erro:
         print("WEBHOOK IGNORADO:", erro)
 
