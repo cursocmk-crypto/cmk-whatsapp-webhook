@@ -574,58 +574,59 @@ def atendimento_conversas():
     )
 
     for contato in contatos_ordenados:
-        telefone = contato["telefone"]
-        nome = html.escape(contato["nome"])
-        telefone_seguro = html.escape(telefone)
+    telefone = contato["telefone"]
+    nome = html.escape(contato["nome"])
+    telefone_seguro = html.escape(telefone)
 
-        ultima = contato["mensagens"][-1]
-        ultima_texto = html.escape(
-            (ultima.get("mensagem") or "")[:45]
-        )
+    ultima = contato["mensagens"][-1]
 
-   ultima_data = ultima.get("created_at") or ""
-ultima_visualizacao = visualizacoes.get(telefone)
-
-quantidade_novas = 0
-
-for mensagem_item in contato["mensagens"]:
-    if mensagem_item.get("direcao") != "entrada":
-        continue
-
-    data_mensagem = mensagem_item.get("created_at") or ""
-
-    if (
-        not ultima_visualizacao
-        or data_mensagem > ultima_visualizacao
-    ):
-        quantidade_novas += 1
-
-       indicador = ""
-
-if quantidade_novas > 0:
-    texto_contador = (
-        "99+"
-        if quantidade_novas > 99
-        else str(quantidade_novas)
+    ultima_texto = html.escape(
+        (ultima.get("mensagem") or "")[:45]
     )
 
-    indicador = f"""
-        <span style="
-            min-width:20px;
-            height:20px;
-            padding:0 6px;
-            border-radius:10px;
-            background:#16a34a;
-            color:white;
-            font-size:11px;
-            font-weight:700;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-        ">
-            {texto_contador}
-        </span>
-    """
+    ultima_data = ultima.get("created_at") or ""
+    ultima_visualizacao = visualizacoes.get(telefone)
+
+    quantidade_novas = 0
+
+    for mensagem_item in contato["mensagens"]:
+        if mensagem_item.get("direcao") != "entrada":
+            continue
+
+        data_mensagem = mensagem_item.get("created_at") or ""
+
+        if (
+            not ultima_visualizacao
+            or data_mensagem > ultima_visualizacao
+        ):
+            quantidade_novas += 1
+
+    indicador = ""
+
+    if quantidade_novas > 0:
+        texto_contador = (
+            "99+"
+            if quantidade_novas > 99
+            else str(quantidade_novas)
+        )
+
+        indicador = f"""
+            <span style="
+                min-width:20px;
+                height:20px;
+                padding:0 6px;
+                border-radius:10px;
+                background:#16a34a;
+                color:white;
+                font-size:11px;
+                font-weight:700;
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+            ">
+                {texto_contador}
+            </span>
+        """
 
         peso = "700" if nova else "600"
 
