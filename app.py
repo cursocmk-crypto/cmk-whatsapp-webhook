@@ -219,6 +219,10 @@ def receber_webhook():
         statuses = value.get("statuses", [])
         contatos = value.get("contacts", [])
 
+        # ==========================================
+        # MENSAGENS RECEBIDAS
+        # ==========================================
+
         for msg in mensagens:
             telefone = msg.get("from")
             whatsapp_message_id = msg.get("id")
@@ -268,82 +272,129 @@ def receber_webhook():
                 whatsapp_message_id
             )
 
-            # Pedido explícito de descadastro: atualizar apenas contato existente.
-            if tipo == "text" and texto.strip().casefold() in (
-                "sair", "parar", "cancelar", "descadastrar"
-            ) and telefone:
+            # Descadastro
+            if (
+                tipo == "text"
+                and texto.strip().casefold() in (
+                    "sair",
+                    "parar",
+                    "cancelar",
+                    "descadastrar"
+                )
+                and telefone
+            ):
                 try:
-                    numero = "".join(c for c in telefone if c.isdigit())
+                    numero = "".join(
+                        c for c in telefone
+                        if c.isdigit()
+                    )
+
                     resposta_saida = requests.patch(
                         f"{SUPABASE_URL}/rest/v1/contatos_cmk",
-                        headers={**supabase_headers(), "Prefer": "return=minimal"},
-                        params={"telefone": f"eq.{numero}"},
-                        json={"descadastrado": True, "data_descadastro": datetime.now(timezone.utc).isoformat()},
-                        timeout=15,
+                        headers={
+                            **supabase_headers(),
+                            "Prefer": "return=minimal"
+                        },
+                        params={
+                            "telefone": f"eq.{numero}"
+                        },
+                        json={
+                            "descadastrado": True,
+                            "data_descadastro":
+                                datetime.now(
+                                    timezone.utc
+                                ).isoformat()
+                        },
+                        timeout=15
                     )
-                    print("DESCADASTRO STATUS:", resposta_saida.status_code)
+
+                    print(
+                        "DESCADASTRO STATUS:",
+                        resposta_saida.status_code
+                    )
+
                 except requests.RequestException:
-                    print("FALHA AO REGISTRAR DESCADASTRO")
+                    print(
+                        "FALHA AO REGISTRAR DESCADASTRO"
+                    )
 
-    for item_status in statuses:
-        message_id_status = item_status.get("id")
-        status_meta = item_status.get("status")
-        erros_meta = item_status.get("errors", [])
+        # ==========================================
+        # STATUS: ENVIADO / ENTREGUE / LIDO / FALHA
+        # ==========================================
 
-        if not message_id_status or not status_meta:
-            continue
+        for item_status in statuses:
+            message_id_status = item_status.get("id")
+            status_meta = item_status.get("status")
+            erros_meta = item_status.get("errors", [])
 
-        try:
-            resposta_status = requests.patch(
-                f"{SUPABASE_URL}/rest/v1/envios_campanha",
-                headers={
-                    **supabase_headers(),
-                    "Prefer": "return=minimal"
-                },
-                params={
-                    "whatsapp_message_id": f"eq.{message_id_status}"
-                },
-                json={
-                    "status": status_meta,
-                    "status_at": datetime.now(timezone.utc).isoformat(),
-                    "erro": str(erros_meta) if erros_meta else None
-                },
-                timeout=15
-            )
+            if not message_id_status or not status_meta:
+                continue
 
-            resposta_mensagem = requests.patch(
-                f"{SUPABASE_URL}/rest/v1/mensagens",
-                headers={
-                    **supabase_headers(),
-                    "Prefer": "return=minimal"
-                },
-                params={
-                    "whatsapp_message_id": f"eq.{message_id_status}"
-                },
-                json={
-                    "status": status_meta,
-                    "status_at": datetime.now(timezone.utc).isoformat()
-                },
-                timeout=15
-            )
+            try:
+                # Atualiza campanha
+                resposta_status = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/envios_campanha",
+                    headers={
+                        **supabase_headers(),
+                        "Prefer": "return=minimal"
+                    },
+                    params={
+                        "whatsapp_message_id":
+                            f"eq.{message_id_status}"
+                    },
+                    json={
+                        "status": status_meta,
+                        "status_at":
+                            datetime.now(
+                                timezone.utc
+                            ).isoformat(),
+                        "erro":
+                            str(erros_meta)
+                            if erros_meta
+                            else None
+                    },
+                    timeout=15
+                )
 
-            print(
-                "STATUS META:",
-                status_meta,
-                "CAMPANHA:",
-                resposta_status.status_code,
-                "ATENDIMENTO:",
-                resposta_mensagem.status_code
-            )
+                # Atualiza mensagem do atendimento
+                resposta_mensagem = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/mensagens",
+                    headers={
+                        **supabase_headers(),
+                        "Prefer": "return=minimal"
+                    },
+                    params={
+                        "whatsapp_message_id":
+                            f"eq.{message_id_status}"
+                    },
+                    json={
+                        "status": status_meta,
+                        "status_at":
+                            datetime.now(
+                                timezone.utc
+                            ).isoformat()
+                    },
+                    timeout=15
+                )
 
-        except requests.RequestException:
-            print("FALHA AO ATUALIZAR STATUS DA CAMPANHA")
-    
+                print(
+                    "STATUS META:",
+                    status_meta,
+                    "CAMPANHA:",
+                    resposta_status.status_code,
+                    "ATENDIMENTO:",
+                    resposta_mensagem.status_code
+                )
+
+            except requests.RequestException:
+                print(
+                    "FALHA AO ATUALIZAR STATUS DA MENSAGEM"
+                )
+
     except (KeyError, IndexError, TypeError) as erro:
         print("WEBHOOK IGNORADO:", erro)
 
     return "EVENT_RECEIVED", 200
-
 
 # =========================================================
 # TESTE DE ENVIO
