@@ -650,7 +650,7 @@ def atendimento():
 
         bolhas = ""
 
-             for item in contato["mensagens"]:
+        for item in contato["mensagens"]:
             texto = html.escape(
                 item.get("mensagem") or ""
             )
