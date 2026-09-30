@@ -1346,16 +1346,96 @@ async function atualizarConversa() {{
 
         const htmlNovo = await resposta.text();
 
-        if (historico.innerHTML !== htmlNovo) {{
-            const estavaNoFinal =
-                historico.scrollHeight -
-                historico.scrollTop -
-                historico.clientHeight < 80;
+        // Primeira leitura serve apenas como referência
+        if (!historico.dataset.inicializado) {{
+            historico.dataset.inicializado = '1';
+            historico.dataset.htmlAnterior = htmlNovo;
+            return;
+        }}
+
+        const htmlAnterior =
+            historico.dataset.htmlAnterior || historico.innerHTML;
+
+        if (htmlAnterior !== htmlNovo) {{
+
+            const tempAnterior = document.createElement('div');
+            tempAnterior.innerHTML = htmlAnterior;
+
+            const tempNovo = document.createElement('div');
+            tempNovo.innerHTML = htmlNovo;
+
+            const qtdAnterior =
+                tempAnterior.querySelectorAll('.mensagem-balao').length;
+
+            const qtdNova =
+                tempNovo.querySelectorAll('.mensagem-balao').length;
+
+            const chegouMensagemNova = qtdNova > qtdAnterior;
 
             historico.innerHTML = htmlNovo;
+            historico.dataset.htmlAnterior = htmlNovo;
 
-            if (estavaNoFinal) {{
-                historico.scrollTop = historico.scrollHeight;
+            if (chegouMensagemNova) {{
+                const mensagens =
+                    historico.querySelectorAll('.mensagem-balao');
+
+                const ultimaMensagem =
+                    mensagens[mensagens.length - 1];
+
+                if (
+                    ultimaMensagem &&
+                    ultimaMensagem.classList.contains('entrada')
+                ) {{
+                    const aviso = document.createElement('div');
+
+                    aviso.textContent = '● Mensagem nova';
+
+                    aviso.style.cssText = `
+                        text-align:center;
+                        font-size:12px;
+                        font-weight:700;
+                        margin:14px 0 8px 0;
+                        color:#16a34a;
+                        border-bottom:1px solid #d1d5db;
+                        line-height:1px;
+                    `;
+
+                    ultimaMensagem.parentNode.insertBefore(
+                        aviso,
+                        ultimaMensagem
+                    );
+
+                    try {{
+                        const audioContext =
+                            new (window.AudioContext ||
+                                 window.webkitAudioContext)();
+
+                        const oscillator =
+                            audioContext.createOscillator();
+
+                        const gain =
+                            audioContext.createGain();
+
+                        oscillator.connect(gain);
+                        gain.connect(audioContext.destination);
+
+                        oscillator.frequency.value = 720;
+                        gain.gain.value = 0.08;
+
+                        oscillator.start();
+
+                        setTimeout(() => {{
+                            oscillator.stop();
+                            audioContext.close();
+                        }}, 130);
+
+                    }} catch (erroSom) {{
+                        console.log('Som bloqueado pelo navegador');
+                    }}
+
+                    historico.scrollTop =
+                        historico.scrollHeight;
+                }}
             }}
         }}
 
@@ -1363,6 +1443,7 @@ async function atualizarConversa() {{
         console.log('Falha ao atualizar conversa');
     }}
 }}
+
 
 async function atualizarListaConversas() {{
     try {{
