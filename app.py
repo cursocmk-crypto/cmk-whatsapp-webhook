@@ -457,8 +457,8 @@ def atendimento_enviar():
 
         # Chave duplicada: este envio já está em processamento
         # ou já foi processado.
-        if resposta_trava.status_code == 409:
-            return "Mensagem já processada.", 200
+       if resposta_trava.status_code == 409:
+    return "Mensagem já processada.", 200
 
         if not resposta_trava.ok:
             print(
@@ -771,7 +771,7 @@ def atendimento():
             class="caixa-envio"
             method="POST"
             action="/atendimento/enviar"
-            onsubmit="return enviarMensagemAjax(this);"
+           onsubmit="enviarMensagemAjax(event, this); return false;"
         >
             <input
                 type="hidden"
@@ -1129,7 +1129,8 @@ def atendimento():
 
         </main>
              <script>
-      async function enviarMensagemAjax(form) {{
+      async function enviarMensagemAjax(event, form) {{
+        event.preventDefault();
     const botao = form.querySelector('button[type="submit"]');
     const textarea = form.querySelector('textarea[name="mensagem"]');
     const historico = document.querySelector('.historico');
