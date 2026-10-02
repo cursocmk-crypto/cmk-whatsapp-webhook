@@ -1422,13 +1422,19 @@ async function atualizarConversa() {{
 
         const htmlNovo = await resposta.text();
 
-        // Primeira leitura serve apenas como referência
+        // Primeira leitura: abre nas mensagens mais recentes
         if (!historico.dataset.inicializado) {{
-            historico.dataset.inicializado = '1';
-            historico.dataset.htmlAnterior = htmlNovo;
-            return;
-        }}
+        historico.dataset.inicializado = '1';
+        historico.dataset.htmlAnterior = htmlNovo;
 
+        historico.innerHTML = htmlNovo;
+
+        requestAnimationFrame(() => {{
+        historico.scrollTop = historico.scrollHeight;
+    }});
+
+    return;
+}}
         const htmlAnterior =
             historico.dataset.htmlAnterior || historico.innerHTML;
 
