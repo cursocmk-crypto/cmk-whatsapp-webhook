@@ -1312,18 +1312,17 @@ def atendimento():
 
     except requests.RequestException:
         respostas_ativas = []
-
     for resposta_item in respostas_ativas:
         titulo_rapido = html.escape(
             resposta_item.get("titulo") or ""
         )
 
-    mensagem_rapida = html.escape(
+        mensagem_rapida = html.escape(
             resposta_item.get("mensagem") or "",
             quote=True
         )
 
-    respostas_rapidas_html += f"""
+        respostas_rapidas_html += f"""
         <button
             type="button"
             class="botao-resposta-rapida"
