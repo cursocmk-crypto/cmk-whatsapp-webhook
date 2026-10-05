@@ -374,3 +374,316 @@ def atendimento_enviar():
         "Não foi possível enviar a mensagem pelo WhatsApp.",
         500
     )
+
+@atendimento_bp.route("/atendimento", methods=["GET"])
+def atendimento():
+    if not autenticado():
+        return exigir_login()
+
+    mensagens = buscar_mensagens()
+
+    contatos = {}
+
+    for item in mensagens:
+        telefone = item.get("telefone") or ""
+
+        if not telefone:
+            continue
+
+        nome = item.get("nome_contato") or "Contato"
+
+        if telefone not in contatos:
+            contatos[telefone] = {
+                "nome": nome,
+                "telefone": telefone,
+                "mensagens": []
+            }
+
+        if (
+            contatos[telefone]["nome"] == "Contato"
+            and nome != "Contato"
+        ):
+            contatos[telefone]["nome"] = nome
+
+        contatos[telefone]["mensagens"].append(item)
+
+    telefone_ativo = request.args.get(
+        "telefone",
+        ""
+    )
+
+    if not telefone_ativo and contatos:
+        contato_mais_recente = max(
+            contatos.values(),
+            key=lambda c: (
+                c["mensagens"][-1].get("created_at") or ""
+                if c["mensagens"]
+                else ""
+            )
+        )
+
+        telefone_ativo = contato_mais_recente["telefone"]
+            # Marca a conversa aberta como visualizada
+    if telefone_ativo:
+        try:
+            requests.post(
+                f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "resolution=merge-duplicates,return=minimal"
+                },
+                json={
+                    "telefone": telefone_ativo,
+                    "ultima_visualizacao": datetime.now(
+                        timezone.utc
+                    ).isoformat()
+                },
+                timeout=10
+            )
+        except requests.RequestException:
+            print(
+                "FALHA AO REGISTRAR VISUALIZACAO:",
+                telefone_ativo
+            )
+
+        lista_contatos = ""
+
+    contatos_ordenados = sorted(
+        contatos.values(),
+        key=lambda c: (
+            c["mensagens"][-1].get("created_at") or ""
+            if c["mensagens"]
+            else ""
+        ),
+        reverse=True
+    )
+
+    for contato in contatos_ordenados:
+        telefone = contato["telefone"]
+        nome_seguro = html.escape(
+            contato["nome"]
+        )
+
+        telefone_seguro = html.escape(
+            telefone
+        )
+
+        ultima = ""
+
+        if contato["mensagens"]:
+            ultima = (
+                contato["mensagens"][-1]
+                .get("mensagem", "")
+            )
+
+        ultima_segura = html.escape(
+            ultima[:45]
+        )
+
+        classe = "contato"
+
+        if telefone == telefone_ativo:
+            classe += " ativo"
+
+        lista_contatos += f"""
+        <a class="{classe}"
+           href="/atendimento?telefone={telefone_seguro}">
+            <div class="avatar">
+                {nome_seguro[:1].upper()}
+            </div>
+
+            <div class="contato-info">
+                <strong>{nome_seguro}</strong>
+                <span>{ultima_segura}</span>
+            </div>
+        </a>
+        """
+        respostas_rapidas_html = ""
+
+    try:
+        resposta_rapidas = requests.get(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers=supabase_headers(),
+            params={
+                "select": "id,titulo,mensagem",
+                "ativo": "eq.true",
+                "order": "titulo.asc"
+            },
+            timeout=15
+        )
+
+        respostas_ativas = (
+            resposta_rapidas.json()
+            if resposta_rapidas.ok
+            else []
+        )
+
+    except requests.RequestException:
+        respostas_ativas = []
+    for resposta_item in respostas_ativas:
+        titulo_rapido = html.escape(
+            resposta_item.get("titulo") or ""
+        )
+
+        mensagem_rapida = html.escape(
+            resposta_item.get("mensagem") or "",
+            quote=True
+        )
+
+        respostas_rapidas_html += f"""
+        <button
+            type="button"
+            class="botao-resposta-rapida"
+            data-mensagem="{mensagem_rapida}"
+            onclick="usarRespostaRapida(this)"
+        >
+            ⚡ {titulo_rapido}
+        </button>
+        """
+
+    area_conversa = """
+        <div class="sem-conversa">
+            Selecione uma conversa para começar.
+        </div>
+    """
+
+    if telefone_ativo in contatos:
+        contato = contatos[telefone_ativo]
+
+        nome = html.escape(
+            contato["nome"]
+        )
+
+        telefone = html.escape(
+            contato["telefone"]
+        )
+
+        bolhas = ""
+
+        for item in contato["mensagens"]:
+            texto = html.escape(
+                item.get("mensagem") or ""
+            )
+
+            direcao = item.get("direcao")
+            status = (item.get("status") or "").lower()
+            criado_em = item.get("created_at") or ""
+
+            horario = ""
+
+            if criado_em:
+                try:
+                    data_msg = datetime.fromisoformat(
+                        criado_em.replace("Z", "+00:00")
+                    )
+
+                    horario = data_msg.astimezone(
+                        timezone(timedelta(hours=-3))
+                    ).strftime("%H:%M")
+
+                except (ValueError, TypeError):
+                    horario = ""
+
+            classe = (
+                "mensagem-balao saida"
+                if direcao == "saida"
+                else "mensagem-balao entrada"
+            )
+
+            status_texto = ""
+
+            if direcao == "saida":
+                if status == "read":
+                    status_texto = "✓✓ Lida"
+                elif status == "delivered":
+                    status_texto = "✓✓ Entregue"
+                elif status == "sent":
+                    status_texto = "✓ Enviada"
+                elif status == "failed":
+                    status_texto = "⚠ Falhou"
+                else:
+                    status_texto = "✓ Enviada"
+
+            detalhes = horario
+
+            if status_texto:
+                detalhes = (
+                    f"{horario} · {status_texto}"
+                    if horario
+                    else status_texto
+                )
+
+            bolhas += f"""
+            <div class="{classe}">
+                <div>{texto}</div>
+                <div class="mensagem-info">{detalhes}</div>
+            </div>
+            """
+
+        area_conversa = f"""
+        <div class="cabecalho-conversa">
+            <div class="avatar grande">
+                {nome[:1].upper()}
+            </div>
+
+            <div>
+                <strong>{nome}</strong>
+                <span>{telefone}</span>
+            </div>
+        </div>
+
+        <div class="historico">
+            {bolhas}
+        </div>
+
+               <form
+            class="caixa-envio"
+            method="POST"
+            action="/atendimento/enviar"
+           onsubmit="enviarMensagemAjax(event, this); return false;"
+        >
+            <input
+                type="hidden"
+                name="telefone"
+                value="{telefone}"
+            >
+
+            <input
+                type="hidden"
+                name="nome"
+                value="{nome}"
+            >
+            <input
+                type="hidden"
+                name="request_id"
+                value=""
+            >
+           
+                       <div class="respostas-rapidas">
+                {respostas_rapidas_html}
+            </div>
+            
+            <textarea
+                name="mensagem"
+                placeholder="Digite sua mensagem..."
+                required
+            ></textarea>
+
+            <button type="submit">
+                Enviar
+            </button>
+        </form>
+        """
+
+    if not lista_contatos:
+        lista_contatos = """
+        <div class="vazio">
+            Nenhuma conversa ainda.
+        </div>
+        """
+
+    return render_template(
+        "atendimento.html",
+        lista_contatos=lista_contatos,
+        area_conversa=area_conversa
+    ), 200
