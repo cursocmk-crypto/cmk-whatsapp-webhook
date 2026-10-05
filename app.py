@@ -1775,6 +1775,9 @@ def atendimento():
                 <a href="/campanhas">
                     Campanhas
                 </a>
+                <a href="/respostas-rapidas">
+                    ⚡ Respostas rápidas
+            </a>
             </nav>
         </header>
 
