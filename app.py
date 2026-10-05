@@ -2,7 +2,7 @@ import os
 import html
 import secrets
 from datetime import datetime, timezone, timedelta
-from flask import Flask, request, redirect, Response
+from flask import Flask, request, redirect, Response, render_template
 import requests
 import uuid
 
