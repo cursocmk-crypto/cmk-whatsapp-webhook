@@ -894,88 +894,11 @@ def respostas_rapidas():
     if not itens:
         itens = "<p>Nenhuma resposta rápida cadastrada.</p>"
 
-    return f"""
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-        >
-        <title>Respostas rápidas - CMK</title>
-    </head>
-
-    <body style="
-        font-family:Arial,sans-serif;
-        background:#f3f4f6;
-        margin:0;
-        padding:30px;
-    ">
-
-        <div style="
-            max-width:800px;
-            margin:auto;
-        ">
-            <p>
-                <a href="/atendimento">← Voltar ao Atendimento</a>
-            </p>
-
-            <h1>⚡ Respostas rápidas</h1>
-
-            <form
-                method="POST"
-                style="
-                    background:white;
-                    padding:20px;
-                    border-radius:10px;
-                    margin-bottom:25px;
-                "
-            >
-                <label><strong>Nome da resposta</strong></label>
-
-                <input
-                    type="text"
-                    name="titulo"
-                    placeholder="Ex.: Valores Veterinária"
-                    required
-                    style="
-                        width:100%;
-                        box-sizing:border-box;
-                        padding:10px;
-                        margin:8px 0 15px;
-                    "
-                >
-
-                <label><strong>Mensagem</strong></label>
+    return render_template(
+        "respostas_rapidas.html",
+        itens=itens
+    ), 200
     
-                <textarea
-                    name="mensagem"
-                    placeholder="Digite a mensagem pronta..."
-                    required
-                    rows="6"
-                    style="
-                        width:100%;
-                        box-sizing:border-box;
-                        padding:10px;
-                        margin:8px 0 15px;
-                    "
-                ></textarea>
-
-                <button type="submit">
-                    + Salvar resposta
-                </button>
-            </form>
-
-            <h2>Respostas cadastradas</h2>
-
-            {itens}
-        </div>
-    </body>
-    </html>
-    """
-
-
 @app.route(
     "/respostas-rapidas/excluir/<int:id_resposta>",
     methods=["POST"]
