@@ -1,1 +1,65 @@
-<!-- Central de Atendimento CMK -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Central CMK</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='estilo.css') }}"
+    >
+</head>
+
+<body>
+
+    <header class="topo">
+        <div class="marca">
+            CMK • Central de Atendimento
+        </div>
+
+        <nav class="menu">
+            <a class="ativo" href="/atendimento">
+                Atendimento
+            </a>
+
+            <a href="/campanhas">
+                Campanhas
+            </a>
+
+            <a href="/respostas-rapidas">
+                ⚡ Respostas rápidas
+            </a>
+        </nav>
+    </header>
+
+    <main class="central">
+
+        <aside class="lateral">
+            <div class="titulo-lateral">
+                Conversas
+            </div>
+
+            <div class="lista-contatos">
+                {{ lista_contatos | safe }}
+            </div>
+        </aside>
+
+        <section class="painel">
+            {{ area_conversa | safe }}
+        </section>
+
+    </main>
+
+    <script
+        src="{{ url_for('static', filename='atendimento.js') }}"
+    ></script>
+
+</body>
+</html>
