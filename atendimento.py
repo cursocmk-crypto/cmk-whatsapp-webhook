@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request, render_template
 
 atendimento_bp = Blueprint(
     "atendimento",
