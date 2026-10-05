@@ -948,7 +948,7 @@ def respostas_rapidas():
                 >
 
                 <label><strong>Mensagem</strong></label>
-
+    
                 <textarea
                     name="mensagem"
                     placeholder="Digite a mensagem pronta..."
@@ -1290,6 +1290,49 @@ def atendimento():
             </div>
         </a>
         """
+        respostas_rapidas_html = ""
+
+    try:
+        resposta_rapidas = requests.get(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers=supabase_headers(),
+            params={
+                "select": "id,titulo,mensagem",
+                "ativo": "eq.true",
+                "order": "titulo.asc"
+            },
+            timeout=15
+        )
+
+        respostas_ativas = (
+            resposta_rapidas.json()
+            if resposta_rapidas.ok
+            else []
+        )
+
+    except requests.RequestException:
+        respostas_ativas = []
+
+    for resposta_item in respostas_ativas:
+        titulo_rapido = html.escape(
+            resposta_item.get("titulo") or ""
+        )
+
+    mensagem_rapida = html.escape(
+            resposta_item.get("mensagem") or "",
+            quote=True
+        )
+
+    respostas_rapidas_html += f"""
+        <button
+            type="button"
+            class="botao-resposta-rapida"
+            data-mensagem="{mensagem_rapida}"
+            onclick="usarRespostaRapida(this)"
+        >
+            ⚡ {titulo_rapido}
+        </button>
+        """
 
     area_conversa = """
         <div class="sem-conversa">
@@ -1408,33 +1451,11 @@ def atendimento():
                 name="request_id"
                 value=""
             >
-            <div class="respostas-rapidas">
-                <button type="button"
-                        onclick="usarRespostaRapida('veterinaria')">
-                    🐾 Veterinária
-                </button>
-            
-                <button type="button"
-                        onclick="usarRespostaRapida('preparatorio')">
-                    🎖️ Preparatório
-                </button>
-            
-                <button type="button"
-                        onclick="usarRespostaRapida('valores')">
-                    💰 Valores
-                </button>
-            
-                <button type="button"
-                        onclick="usarRespostaRapida('horarios')">
-                    🕐 Horários
-                </button>
-            
-                <button type="button"
-                        onclick="usarRespostaRapida('matricula')">
-                    📝 Matrícula
-                </button>
+           
+                       <div class="respostas-rapidas">
+                {respostas_rapidas_html}
             </div>
-
+            
             <textarea
                 name="mensagem"
                 placeholder="Digite sua mensagem..."
@@ -1776,6 +1797,26 @@ def atendimento():
 
         </main>
              <script>
+    function usarRespostaRapida(botao) {{
+    const textarea = document.querySelector(
+        'textarea[name="mensagem"]'
+    );
+
+    if (!textarea) {{
+        return;
+    }}
+
+    const mensagem = botao.dataset.mensagem || '';
+
+    textarea.value = mensagem;
+    textarea.focus();
+
+    textarea.setSelectionRange(
+        textarea.value.length,
+        textarea.value.length
+    );
+}}
+             
       async function enviarMensagemAjax(event, form) {{
         event.preventDefault();
     const botao = form.querySelector('button[type="submit"]');
