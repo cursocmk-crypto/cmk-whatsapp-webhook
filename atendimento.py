@@ -106,7 +106,7 @@ def atendimento_mensagens():
 
     return bolhas, 200
 
-    @atendimento_bp.route("/atendimento/conversas", methods=["GET"])
+@atendimento_bp.route("/atendimento/conversas", methods=["GET"])
 def atendimento_conversas():
     if not autenticado():
         return exigir_login()
