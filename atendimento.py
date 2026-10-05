@@ -1,6 +1,7 @@
 from flask import Blueprint, request, render_template
 import html
 import requests
+import uuid
 from datetime import datetime, timezone, timedelta
 
 
@@ -15,18 +16,21 @@ exigir_login = None
 buscar_mensagens = None
 supabase_headers = None
 SUPABASE_URL = None
-
+enviar_mensagem = None
+salvar_mensagem = None
 
 def configurar_atendimento(dependencias):
     global autenticado, exigir_login, buscar_mensagens
     global supabase_headers, SUPABASE_URL
+    global enviar_mensagem, salvar_mensagem
 
     autenticado = dependencias["autenticado"]
     exigir_login = dependencias["exigir_login"]
     buscar_mensagens = dependencias["buscar_mensagens"]
     supabase_headers = dependencias["supabase_headers"]
     SUPABASE_URL = dependencias["SUPABASE_URL"]
-
+    enviar_mensagem = dependencias["enviar_mensagem"]
+    salvar_mensagem = dependencias["salvar_mensagem"]
 
 @atendimento_bp.route("/atendimento/mensagens", methods=["GET"])
 def atendimento_mensagens():
@@ -289,3 +293,84 @@ def atendimento_visualizar():
         return "Falha ao registrar visualização.", 500
 
     return "", 204
+
+@atendimento_bp.route("/atendimento/enviar", methods=["POST"])
+def atendimento_enviar():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.form.get("telefone", "").strip()
+    nome = request.form.get("nome", "").strip()
+    mensagem = request.form.get("mensagem", "").strip()
+    request_id = request.form.get("request_id", "").strip()
+
+    if not telefone or not mensagem:
+        return "Telefone e mensagem são obrigatórios.", 400
+
+    if not request_id:
+        request_id = str(uuid.uuid4())
+
+    # Reserva este request_id antes de enviar para o WhatsApp.
+    try:
+        resposta_trava = requests.post(
+            f"{SUPABASE_URL}/rest/v1/travas_envio",
+            headers={
+                **supabase_headers(),
+                "Prefer": "return=minimal"
+            },
+            json={
+                "request_id": request_id
+            },
+            timeout=10
+        )
+
+        # Chave duplicada: este envio já está em processamento
+        # ou já foi processado.
+        if resposta_trava.status_code == 409:
+            return "Mensagem já processada.", 200
+
+        if not resposta_trava.ok:
+            print(
+                "ERRO AO CRIAR TRAVA:",
+                resposta_trava.status_code
+            )
+            return "Não foi possível iniciar o envio.", 500
+
+    except requests.RequestException:
+        return "Falha de conexão ao iniciar o envio.", 500
+
+    status, message_id = enviar_mensagem(
+        telefone,
+        mensagem
+    )
+
+    if status == 200:
+        salvar_mensagem(
+            telefone,
+            nome,
+            mensagem,
+            "saida",
+            message_id,
+            request_id=request_id
+        )
+
+        return "Mensagem enviada.", 200
+
+    # Se a Meta não aceitou o envio, libera a trava
+    # para permitir uma nova tentativa.
+    try:
+        requests.delete(
+            f"{SUPABASE_URL}/rest/v1/travas_envio",
+            headers=supabase_headers(),
+            params={
+                "request_id": f"eq.{request_id}"
+            },
+            timeout=10
+        )
+    except requests.RequestException:
+        print("FALHA AO LIBERAR TRAVA")
+
+    return (
+        "Não foi possível enviar a mensagem pelo WhatsApp.",
+        500
+    )
