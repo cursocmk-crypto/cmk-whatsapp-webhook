@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Flask, request, redirect, Response, render_template
 import requests
 import uuid
+from atendimento import atendimento_bp, configurar_atendimento
 
 app = Flask(__name__)
 
