@@ -1075,8 +1075,17 @@ def atendimento():
         ""
     )
 
-    if not telefone_ativo and contatos:
-        telefone_ativo = list(contatos.keys())[-1]
+        if not telefone_ativo and contatos:
+        contato_mais_recente = max(
+            contatos.values(),
+            key=lambda c: (
+                c["mensagens"][-1].get("created_at") or ""
+                if c["mensagens"]
+                else ""
+            )
+        )
+
+        telefone_ativo = contato_mais_recente["telefone"]
 
             # Marca a conversa aberta como visualizada
     if telefone_ativo:
@@ -1101,11 +1110,20 @@ def atendimento():
                 telefone_ativo
             )
 
-    lista_contatos = ""
+        lista_contatos = ""
 
-    for telefone, contato in reversed(
-        list(contatos.items())
-    ):
+    contatos_ordenados = sorted(
+        contatos.values(),
+        key=lambda c: (
+            c["mensagens"][-1].get("created_at") or ""
+            if c["mensagens"]
+            else ""
+        ),
+        reverse=True
+    )
+
+    for contato in contatos_ordenados:
+        telefone = contato["telefone"]
         nome_seguro = html.escape(
             contato["nome"]
         )
