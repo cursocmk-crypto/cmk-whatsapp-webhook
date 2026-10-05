@@ -1,1 +1,265 @@
-/* Estilos da Central CMK */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #eef1f5;
+    color: #1f2937;
+}
+
+.topo {
+    height: 70px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+}
+
+.marca {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.menu {
+    display: flex;
+    gap: 10px;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 7px;
+    background: rgba(255,255,255,0.08);
+}
+
+.menu a.ativo {
+    background: white;
+    color: #111827;
+}
+
+.central {
+    width: calc(100% - 40px);
+    max-width: 1300px;
+    height: calc(100vh - 100px);
+    margin: 15px auto;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+}
+
+.lateral {
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+    background: white;
+}
+
+.titulo-lateral {
+    padding: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.contato {
+    display: flex;
+    gap: 12px;
+    padding: 15px 18px;
+    text-decoration: none;
+    color: #111827;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.contato:hover {
+    background: #f8fafc;
+}
+
+.contato.ativo {
+    background: #eef2ff;
+}
+
+.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.avatar.grande {
+    width: 45px;
+    height: 45px;
+}
+
+.contato-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.contato-info span {
+    color: #6b7280;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.painel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.cabecalho-conversa {
+    height: 72px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cabecalho-conversa div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cabecalho-conversa span {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.historico {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 25px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mensagem-balao {
+    max-width: 70%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.mensagem-balao.entrada {
+    align-self: flex-start;
+    background: white;
+    border: 1px solid #e5e7eb;
+}
+
+.mensagem-balao.saida {
+    align-self: flex-end;
+    background: #dcfce7;
+}
+
+.caixa-envio {
+    min-height: 82px;
+    flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    background: white;
+}
+
+.caixa-envio textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    padding: 12px;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    outline: none;
+}
+
+.caixa-envio button {
+    border: 0;
+    border-radius: 9px;
+    padding: 0 24px;
+    background: #111827;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.caixa-envio button:hover {
+    opacity: 0.9;
+}
+
+.sem-conversa {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: #f8fafc;
+}
+
+.vazio {
+    padding: 25px;
+    color: #6b7280;
+}
+
+@media (max-width: 760px) {
+    .central {
+        width: 100%;
+        height: calc(100vh - 70px);
+        margin: 0;
+        border-radius: 0;
+        grid-template-columns: 140px 1fr;
+    }
+
+    .topo {
+        height: 70px;
+    }
+
+    .marca {
+        font-size: 17px;
+    }
+
+    .menu {
+        display: none;
+    }
+
+    .titulo-lateral {
+        font-size: 15px;
+        padding: 15px 10px;
+    }
+
+    .contato {
+        padding: 12px 8px;
+    }
+
+    .avatar {
+        display: none;
+    }
+
+    .mensagem-balao {
+        max-width: 88%;
+    }
+}
