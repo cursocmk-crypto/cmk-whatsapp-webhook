@@ -148,7 +148,9 @@ configurar_atendimento({
     "exigir_login": exigir_login,
     "buscar_mensagens": buscar_mensagens,
     "supabase_headers": supabase_headers,
-    "SUPABASE_URL": SUPABASE_URL
+    "SUPABASE_URL": SUPABASE_URL,
+    "enviar_mensagem": enviar_mensagem,
+    "salvar_mensagem": salvar_mensagem
 })
 
 app.register_blueprint(atendimento_bp)
@@ -434,128 +436,10 @@ def teste_envio():
 # ENVIAR RESPOSTA PELO ATENDIMENTO
 # =========================================================
 
-@app.route("/atendimento/enviar", methods=["POST"])
-def atendimento_enviar():
-    if not autenticado():
-        return exigir_login()
-
-    telefone = request.form.get("telefone", "").strip()
-    nome = request.form.get("nome", "").strip()
-    mensagem = request.form.get("mensagem", "").strip()
-    request_id = request.form.get("request_id", "").strip()
-
-    if not telefone or not mensagem:
-        return "Telefone e mensagem são obrigatórios.", 400
-
-    if not request_id:
-        request_id = str(uuid.uuid4())
-
-    # Reserva este request_id antes de enviar para o WhatsApp.
-    try:
-        resposta_trava = requests.post(
-            f"{SUPABASE_URL}/rest/v1/travas_envio",
-            headers={
-                **supabase_headers(),
-                "Prefer": "return=minimal"
-            },
-            json={
-                "request_id": request_id
-            },
-            timeout=10
-        )
-
-        # Chave duplicada: este envio já está em processamento
-        # ou já foi processado.
-        if resposta_trava.status_code == 409:
-            return "Mensagem já processada.", 200
-
-        if not resposta_trava.ok:
-            print(
-                "ERRO AO CRIAR TRAVA:",
-                resposta_trava.status_code
-            )
-            return "Não foi possível iniciar o envio.", 500
-
-    except requests.RequestException:
-        return "Falha de conexão ao iniciar o envio.", 500
-
-    status, message_id = enviar_mensagem(
-        telefone,
-        mensagem
-    )
-
-    if status == 200:
-        salvar_mensagem(
-            telefone,
-            nome,
-            mensagem,
-            "saida",
-            message_id,
-            request_id=request_id
-        )
-
-        return "Mensagem enviada.", 200
-
-    # Se a Meta não aceitou o envio, libera a trava
-    # para permitir uma nova tentativa.
-    try:
-        requests.delete(
-            f"{SUPABASE_URL}/rest/v1/travas_envio",
-            headers=supabase_headers(),
-            params={
-                "request_id": f"eq.{request_id}"
-            },
-            timeout=10
-        )
-    except requests.RequestException:
-        print("FALHA AO LIBERAR TRAVA")
-
-    return (
-        "Não foi possível enviar a mensagem pelo WhatsApp.",
-        500
-    )
 
 # =========================================================
 # CENTRAL DE ATENDIMENTO
 # =========================================================
-
-
-
-@app.route("/atendimento/visualizar", methods=["POST"])
-def atendimento_visualizar():
-    if not autenticado():
-        return exigir_login()
-
-    telefone = request.form.get("telefone", "").strip()
-
-    if not telefone:
-        return "Telefone obrigatório.", 400
-
-    try:
-        resposta = requests.post(
-            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
-            headers={
-                **supabase_headers(),
-                "Prefer": "resolution=merge-duplicates,return=minimal"
-            },
-            json={
-                "telefone": telefone,
-                "ultima_visualizacao": datetime.now(
-                    timezone.utc
-                ).isoformat()
-            },
-            timeout=10
-        )
-
-        if not resposta.ok:
-            return "Falha ao registrar visualização.", 500
-
-    except requests.RequestException:
-        return "Falha ao registrar visualização.", 500
-
-    return "", 204
-
-
 
 @app.route("/respostas-rapidas", methods=["GET", "POST"])
 def respostas_rapidas():
