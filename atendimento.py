@@ -11,8 +11,7 @@ def configurar_atendimento(dependencias):
     exigir_login = dependencias["exigir_login"]
     buscar_mensagens = dependencias["buscar_mensagens"]
         @atendimento_bp.route("/atendimento/mensagens", methods=["GET"])
-
-def atendimento_mensagens():
+    def atendimento_mensagens():
         if not autenticado():
             return exigir_login()
 
