@@ -1075,7 +1075,7 @@ def atendimento():
         ""
     )
 
-        if not telefone_ativo and contatos:
+    if not telefone_ativo and contatos:
         contato_mais_recente = max(
             contatos.values(),
             key=lambda c: (
@@ -1086,7 +1086,6 @@ def atendimento():
         )
 
         telefone_ativo = contato_mais_recente["telefone"]
-
             # Marca a conversa aberta como visualizada
     if telefone_ativo:
         try:
