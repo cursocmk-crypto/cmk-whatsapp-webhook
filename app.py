@@ -772,6 +772,419 @@ def atendimento_mensagens():
 
     return bolhas, 200      
 
+@app.route("/respostas-rapidas", methods=["GET", "POST"])
+def respostas_rapidas():
+    if not autenticado():
+        return exigir_login()
+
+    if request.method == "POST":
+        titulo = request.form.get("titulo", "").strip()
+        mensagem = request.form.get("mensagem", "").strip()
+
+        if not titulo or not mensagem:
+            return "Título e mensagem são obrigatórios.", 400
+
+        try:
+            resposta = requests.post(
+                f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "return=minimal"
+                },
+                json={
+                    "titulo": titulo,
+                    "mensagem": mensagem,
+                    "ativo": True
+                },
+                timeout=15
+            )
+
+            if not resposta.ok:
+                return "Erro ao salvar resposta rápida.", 500
+
+        except requests.RequestException:
+            return "Erro ao salvar resposta rápida.", 500
+
+        return redirect("/respostas-rapidas")
+
+    try:
+        resposta = requests.get(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers=supabase_headers(),
+            params={
+                "select": "id,titulo,mensagem,ativo",
+                "order": "titulo.asc"
+            },
+            timeout=15
+        )
+
+        respostas = resposta.json() if resposta.ok else []
+
+    except requests.RequestException:
+        respostas = []
+
+    itens = ""
+
+    for item in respostas:
+        id_resposta = item.get("id")
+        titulo = html.escape(item.get("titulo") or "")
+        mensagem = html.escape(item.get("mensagem") or "")
+        ativo = item.get("ativo") is True
+
+        status = "Ativa" if ativo else "Desativada"
+
+        itens += f"""
+        <div style="
+            background:white;
+            padding:16px;
+            margin-bottom:12px;
+            border-radius:10px;
+            border:1px solid #ddd;
+        ">
+            <strong>{titulo}</strong>
+            <span style="
+                font-size:12px;
+                margin-left:8px;
+                color:#666;
+            ">
+                {status}
+            </span>
+
+            <div style="
+                margin-top:8px;
+                white-space:pre-wrap;
+            ">{mensagem}</div>
+
+            <div style="
+                margin-top:12px;
+                display:flex;
+                gap:8px;
+            ">
+                <a href="/respostas-rapidas/editar/{id_resposta}">
+                    Editar
+                </a>
+                <form
+    method="POST"
+    action="/respostas-rapidas/status/{id_resposta}"
+>
+    <input
+        type="hidden"
+        name="ativo"
+        value="{'false' if ativo else 'true'}"
+    >
+
+    <button type="submit">
+        {'Desativar' if ativo else 'Ativar'}
+    </button>
+</form>
+
+                <form
+                    method="POST"
+                    action="/respostas-rapidas/excluir/{id_resposta}"
+                    onsubmit="return confirm('Excluir esta resposta?');"
+                >
+                    <button type="submit">
+                        Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
+        """
+
+    if not itens:
+        itens = "<p>Nenhuma resposta rápida cadastrada.</p>"
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+        <title>Respostas rápidas - CMK</title>
+    </head>
+
+    <body style="
+        font-family:Arial,sans-serif;
+        background:#f3f4f6;
+        margin:0;
+        padding:30px;
+    ">
+
+        <div style="
+            max-width:800px;
+            margin:auto;
+        ">
+            <p>
+                <a href="/atendimento">← Voltar ao Atendimento</a>
+            </p>
+
+            <h1>⚡ Respostas rápidas</h1>
+
+            <form
+                method="POST"
+                style="
+                    background:white;
+                    padding:20px;
+                    border-radius:10px;
+                    margin-bottom:25px;
+                "
+            >
+                <label><strong>Nome da resposta</strong></label>
+
+                <input
+                    type="text"
+                    name="titulo"
+                    placeholder="Ex.: Valores Veterinária"
+                    required
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:10px;
+                        margin:8px 0 15px;
+                    "
+                >
+
+                <label><strong>Mensagem</strong></label>
+
+                <textarea
+                    name="mensagem"
+                    placeholder="Digite a mensagem pronta..."
+                    required
+                    rows="6"
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:10px;
+                        margin:8px 0 15px;
+                    "
+                ></textarea>
+
+                <button type="submit">
+                    + Salvar resposta
+                </button>
+            </form>
+
+            <h2>Respostas cadastradas</h2>
+
+            {itens}
+        </div>
+    </body>
+    </html>
+    """
+
+
+@app.route(
+    "/respostas-rapidas/excluir/<int:id_resposta>",
+    methods=["POST"]
+)
+def excluir_resposta_rapida(id_resposta):
+    if not autenticado():
+        return exigir_login()
+
+    try:
+        resposta = requests.delete(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "return=minimal"
+            },
+            params={
+                "id": f"eq.{id_resposta}"
+            },
+            timeout=15
+        )
+
+        if not resposta.ok:
+            return "Erro ao excluir resposta.", 500
+
+    except requests.RequestException:
+        return "Erro ao excluir resposta.", 500
+
+    return redirect("/respostas-rapidas")
+
+    @app.route(
+    "/respostas-rapidas/editar/<int:id_resposta>",
+    methods=["GET", "POST"]
+)
+def editar_resposta_rapida(id_resposta):
+    if not autenticado():
+        return exigir_login()
+
+    if request.method == "POST":
+        titulo = request.form.get("titulo", "").strip()
+        mensagem = request.form.get("mensagem", "").strip()
+
+        if not titulo or not mensagem:
+            return "Título e mensagem são obrigatórios.", 400
+
+        try:
+            resposta = requests.patch(
+                f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+                headers={
+                    **supabase_headers(),
+                    "Prefer": "return=minimal"
+                },
+                params={
+                    "id": f"eq.{id_resposta}"
+                },
+                json={
+                    "titulo": titulo,
+                    "mensagem": mensagem
+                },
+                timeout=15
+            )
+
+            if not resposta.ok:
+                return "Erro ao atualizar resposta.", 500
+
+        except requests.RequestException:
+            return "Erro ao atualizar resposta.", 500
+
+        return redirect("/respostas-rapidas")
+
+    try:
+        resposta = requests.get(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers=supabase_headers(),
+            params={
+                "select": "id,titulo,mensagem",
+                "id": f"eq.{id_resposta}",
+                "limit": "1"
+            },
+            timeout=15
+        )
+
+        dados = resposta.json() if resposta.ok else []
+
+    except requests.RequestException:
+        dados = []
+
+    if not dados:
+        return "Resposta rápida não encontrada.", 404
+
+    item = dados[0]
+
+    titulo = html.escape(
+        item.get("titulo") or "",
+        quote=True
+    )
+
+    mensagem = html.escape(
+        item.get("mensagem") or ""
+    )
+
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+        <title>Editar resposta - CMK</title>
+    </head>
+
+    <body style="
+        font-family:Arial,sans-serif;
+        background:#f3f4f6;
+        padding:30px;
+    ">
+        <div style="
+            max-width:700px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:10px;
+        ">
+            <h1>Editar resposta rápida</h1>
+
+            <form method="POST">
+                <label><strong>Nome da resposta</strong></label>
+
+                <input
+                    type="text"
+                    name="titulo"
+                    value="{titulo}"
+                    required
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:10px;
+                        margin:8px 0 15px;
+                    "
+                >
+
+                <label><strong>Mensagem</strong></label>
+
+                <textarea
+                    name="mensagem"
+                    required
+                    rows="8"
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:10px;
+                        margin:8px 0 15px;
+                    "
+                >{mensagem}</textarea>
+
+                <button type="submit">
+                    Salvar alterações
+                </button>
+
+                <a
+                    href="/respostas-rapidas"
+                    style="margin-left:12px;"
+                >
+                    Cancelar
+                </a>
+            </form>
+        </div>
+    </body>
+    </html>
+    """
+
+
+@app.route(
+    "/respostas-rapidas/status/<int:id_resposta>",
+    methods=["POST"]
+)
+def status_resposta_rapida(id_resposta):
+    if not autenticado():
+        return exigir_login()
+
+    novo_status = (
+        request.form.get("ativo", "").lower() == "true"
+    )
+
+    try:
+        resposta = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "return=minimal"
+            },
+            params={
+                "id": f"eq.{id_resposta}"
+            },
+            json={
+                "ativo": novo_status
+            },
+            timeout=15
+        )
+
+        if not resposta.ok:
+            return "Erro ao alterar status.", 500
+
+    except requests.RequestException:
+        return "Erro ao alterar status.", 500
+
+    return redirect("/respostas-rapidas")
+
 @app.route("/atendimento", methods=["GET"])
 def atendimento():
     if not autenticado():
@@ -996,6 +1409,32 @@ def atendimento():
                 name="request_id"
                 value=""
             >
+            <div class="respostas-rapidas">
+                <button type="button"
+                        onclick="usarRespostaRapida('veterinaria')">
+                    🐾 Veterinária
+                </button>
+            
+                <button type="button"
+                        onclick="usarRespostaRapida('preparatorio')">
+                    🎖️ Preparatório
+                </button>
+            
+                <button type="button"
+                        onclick="usarRespostaRapida('valores')">
+                    💰 Valores
+                </button>
+            
+                <button type="button"
+                        onclick="usarRespostaRapida('horarios')">
+                    🕐 Horários
+                </button>
+            
+                <button type="button"
+                        onclick="usarRespostaRapida('matricula')">
+                    📝 Matrícula
+                </button>
+            </div>
 
             <textarea
                 name="mensagem"
