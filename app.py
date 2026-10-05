@@ -143,17 +143,6 @@ def buscar_mensagens():
     except requests.RequestException:
         print("FALHA DE CONEXAO AO LER MENSAGENS")
         return []
-configurar_atendimento({
-    "autenticado": autenticado,
-    "exigir_login": exigir_login,
-    "buscar_mensagens": buscar_mensagens,
-    "supabase_headers": supabase_headers,
-    "SUPABASE_URL": SUPABASE_URL,
-    "enviar_mensagem": enviar_mensagem,
-    "salvar_mensagem": salvar_mensagem
-})
-
-app.register_blueprint(atendimento_bp)
 
 def enviar_mensagem(numero, mensagem):
     url = (
@@ -192,7 +181,17 @@ def enviar_mensagem(numero, mensagem):
             pass
 
     return resposta.status_code, message_id
-
+    
+configurar_atendimento({
+    "autenticado": autenticado,
+    "exigir_login": exigir_login,
+    "buscar_mensagens": buscar_mensagens,
+    "supabase_headers": supabase_headers,
+    "SUPABASE_URL": SUPABASE_URL,
+    "enviar_mensagem": enviar_mensagem,
+    "salvar_mensagem": salvar_mensagem
+})
+app.register_blueprint(atendimento_bp)
 
 # =========================================================
 # PÁGINA PRINCIPAL
