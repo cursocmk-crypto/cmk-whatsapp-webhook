@@ -4,3 +4,5 @@ atendimento_bp = Blueprint(
     "atendimento",
     __name__
 )
+def configurar_atendimento(dependencias):
+    pass
