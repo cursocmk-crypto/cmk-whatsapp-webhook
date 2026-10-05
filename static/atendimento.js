@@ -262,6 +262,26 @@ async function atualizarListaConversas() {
     }
 }
 
+function irParaUltimaMensagem() {
+    const historico = document.querySelector('.historico');
+
+    if (!historico) {
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        historico.scrollTop = historico.scrollHeight;
+
+        setTimeout(() => {
+            historico.scrollTop = historico.scrollHeight;
+        }, 100);
+    });
+}
+
+document.addEventListener(
+    'DOMContentLoaded',
+    irParaUltimaMensagem
+);
 
 setInterval(atualizarConversa, 2000);
 setInterval(atualizarListaConversas, 2000);
