@@ -255,3 +255,37 @@ def atendimento_conversas():
         """
 
     return lista, 200
+    
+@atendimento_bp.route("/atendimento/visualizar", methods=["POST"])
+def atendimento_visualizar():
+    if not autenticado():
+        return exigir_login()
+
+    telefone = request.form.get("telefone", "").strip()
+
+    if not telefone:
+        return "Telefone obrigatório.", 400
+
+    try:
+        resposta = requests.post(
+            f"{SUPABASE_URL}/rest/v1/conversas_visualizadas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            json={
+                "telefone": telefone,
+                "ultima_visualizacao": datetime.now(
+                    timezone.utc
+                ).isoformat()
+            },
+            timeout=10
+        )
+
+        if not resposta.ok:
+            return "Falha ao registrar visualização.", 500
+
+    except requests.RequestException:
+        return "Falha ao registrar visualização.", 500
+
+    return "", 204
