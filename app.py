@@ -1004,8 +1004,7 @@ def excluir_resposta_rapida(id_resposta):
         return "Erro ao excluir resposta.", 500
 
     return redirect("/respostas-rapidas")
-
-    @app.route(
+@app.route(
     "/respostas-rapidas/editar/<int:id_resposta>",
     methods=["GET", "POST"]
 )
