@@ -263,3 +263,24 @@ body {
         max-width: 88%;
     }
 }
+.filtros-conversas {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.filtro {
+    border: none;
+    border-radius: 20px;
+    padding: 8px 14px;
+    cursor: pointer;
+    background: #e9edef;
+    color: #54656f;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.filtro.ativo {
+    background: #d9fdd3;
+    color: #075e54;
+}
