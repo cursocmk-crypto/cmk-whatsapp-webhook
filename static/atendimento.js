@@ -266,6 +266,7 @@ if (mudou) {
     lista.replaceChildren(...contatosNovos);
 }
         aplicarFiltroConversas();
+        destacarConversaAtiva();
 
     } catch (erro) {
         console.log(
@@ -297,6 +298,24 @@ document.querySelectorAll('.filtro').forEach(botao => {
         aplicarFiltroConversas();
     });
 });
+
+function destacarConversaAtiva() {
+    const telefoneAtivo = new URLSearchParams(
+        window.location.search
+    ).get('telefone');
+
+    document.querySelectorAll('.lista-contatos a.contato')
+        .forEach(contato => {
+            const telefone = new URL(
+                contato.href
+            ).searchParams.get('telefone');
+
+            contato.classList.toggle(
+                'ativo',
+                telefone === telefoneAtivo
+            );
+        });
+}
 
 function irParaUltimaMensagem() {
     const historico = document.querySelector('.historico');
