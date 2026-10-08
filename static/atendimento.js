@@ -322,3 +322,62 @@ document.addEventListener(
 setInterval(atualizarConversa, 2000);
 setInterval(atualizarListaConversas, 2000);
 
+
+// Troca de conversa sem recarregar a página
+document.addEventListener('click', async function(evento) {
+    const contato = evento.target.closest('.lista-contatos a.contato');
+
+    if (!contato) return;
+
+    evento.preventDefault();
+
+    const destino = new URL(contato.href);
+    const telefone = destino.searchParams.get('telefone');
+
+    if (!telefone) return;
+    window.conversaSolicitada = telefone;
+    try {
+        const resposta = await fetch(
+            '/atendimento?telefone=' +
+            encodeURIComponent(telefone) +
+            '&parcial=1'
+        );
+
+        if (!resposta.ok) {
+            window.location.href = contato.href;
+            return;
+        }
+
+        const html = await resposta.text();
+        const painel = document.querySelector('.painel');
+
+        if (!painel) return;
+
+       if (window.conversaSolicitada !== telefone) {
+    return;
+}
+        
+        painel.innerHTML = html;
+
+        document.querySelectorAll('.lista-contatos a.contato')
+            .forEach(item => {
+                item.classList.toggle(
+                    'ativo',
+                    item.href === contato.href
+                );
+            });
+
+        history.pushState({}, '', contato.href);
+
+        const historico = painel.querySelector('.historico');
+
+        if (historico) {
+            historico.scrollTop = historico.scrollHeight;
+        }
+
+    } catch (erro) {
+        console.error('Erro ao abrir conversa:', erro);
+        window.location.href = contato.href;
+    }
+});
+
