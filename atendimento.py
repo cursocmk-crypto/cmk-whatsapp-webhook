@@ -607,7 +607,7 @@ def atendimento():
                     status_texto = "⚠ Falhou"
                     status_classe = "status-falha"
                 else:
-                    status_texto = "✓ Enviada""
+                    status_texto = "✓ Enviada"
 
             detalhes = horario
 
