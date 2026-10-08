@@ -358,6 +358,16 @@ document.addEventListener('click', async function(evento) {
 }
         
         painel.innerHTML = html;
+        // Registra a visualização sem atrasar a abertura da conversa
+        const dadosVisualizacao = new URLSearchParams();
+        dadosVisualizacao.append('telefone', telefone);
+
+        fetch('/atendimento/visualizar', {
+            method: 'POST',
+            body: dadosVisualizacao
+        }).catch(erro => {
+            console.error('Erro ao registrar visualização:', erro);
+        });
 
         document.querySelectorAll('.lista-contatos a.contato')
             .forEach(item => {
