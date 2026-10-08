@@ -505,10 +505,9 @@ def atendimento():
             </div>
         </a>
         """
-        respostas_rapidas_html = ""
-
-    try:
-          agora = time.monotonic()
+    respostas_rapidas_html = ""
+    
+    agora = time.monotonic()
 
     if agora - cache_respostas_rapidas["atualizado_em"] < 60:
         respostas_ativas = cache_respostas_rapidas["dados"]
