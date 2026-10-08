@@ -45,7 +45,14 @@
             <div class="titulo-lateral">
                 Conversas
             </div>
-
+        <div class="filtros-conversas">
+        <button type="button" class="filtro ativo" data-filtro="todas">
+            Todas
+        </button>
+        <button type="button" class="filtro" data-filtro="nao-lidas">
+            Não lidas
+        </button>
+    </div>
             <div class="lista-contatos">
                 {{ lista_contatos | safe }}
             </div>
