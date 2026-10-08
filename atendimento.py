@@ -232,6 +232,21 @@ def atendimento_conversas():
 
         peso = "700" if quantidade_novas > 0 else "600"
 
+        horario_ultima = ""
+
+        criado_ultima = ultima.get("created_at") or ""
+
+        if criado_ultima:
+            try:
+                data_ultima = datetime.fromisoformat(
+                    criado_ultima.replace("Z", "+00:00")
+                )
+                horario_ultima = data_ultima.astimezone(
+                    timezone(timedelta(hours=-3))
+                ).strftime("%H:%M")
+            except (ValueError, TypeError):
+                pass
+        
         lista += f"""
             <a class="contato"
                href="/atendimento?telefone={telefone_seguro}"
@@ -251,6 +266,9 @@ def atendimento_conversas():
                             {nome}
                         </strong>
                         {indicador}
+                        <span style="margin-left:auto; font-size:11px; color:#667781; white-space:nowrap;">
+                            {horario_ultima}
+                        </span>
                     </div>
 
                     <span style="font-weight:{peso};">
