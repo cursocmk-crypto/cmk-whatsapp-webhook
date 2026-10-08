@@ -254,6 +254,7 @@ async function atualizarListaConversas() {
         if (lista.innerHTML !== htmlNovo) {
             lista.innerHTML = htmlNovo;
         }
+        aplicarFiltroConversas();
 
     } catch (erro) {
         console.log(
@@ -261,6 +262,30 @@ async function atualizarListaConversas() {
         );
     }
 }
+
+let filtroAtual = 'todas';
+
+function aplicarFiltroConversas() {
+    const contatos = document.querySelectorAll('.lista-contatos .contato');
+
+    contatos.forEach(contato => {
+        const temMensagemNova = !!contato.querySelector('.indicador-novo');
+        contato.style.display =
+            filtroAtual === 'todas' || temMensagemNova ? '' : 'none';
+    });
+}
+
+document.querySelectorAll('.filtro').forEach(botao => {
+    botao.addEventListener('click', () => {
+        filtroAtual = botao.dataset.filtro;
+
+        document.querySelectorAll('.filtro').forEach(item => {
+            item.classList.toggle('ativo', item === botao);
+        });
+
+        aplicarFiltroConversas();
+    });
+});
 
 function irParaUltimaMensagem() {
     const historico = document.querySelector('.historico');
@@ -285,3 +310,4 @@ document.addEventListener(
 
 setInterval(atualizarConversa, 2000);
 setInterval(atualizarListaConversas, 2000);
+
