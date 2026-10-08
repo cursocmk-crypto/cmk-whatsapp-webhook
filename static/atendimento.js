@@ -251,9 +251,20 @@ async function atualizarListaConversas() {
             return;
         }
 
-        if (lista.innerHTML !== htmlNovo) {
-            lista.innerHTML = htmlNovo;
-        }
+        const listaTemporaria = document.createElement('div');
+listaTemporaria.innerHTML = htmlNovo;
+
+const contatosAtuais = [...lista.querySelectorAll('.contato')];
+const contatosNovos = [...listaTemporaria.querySelectorAll('.contato')];
+
+const mudou = contatosAtuais.length !== contatosNovos.length ||
+    contatosAtuais.some((atual, i) =>
+        atual.outerHTML !== contatosNovos[i]?.outerHTML
+    );
+
+if (mudou) {
+    lista.replaceChildren(...contatosNovos);
+}
         aplicarFiltroConversas();
 
     } catch (erro) {
