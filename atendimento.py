@@ -446,7 +446,7 @@ def atendimento():
             # Marca a conversa aberta como visualizada
 
 
-        lista_contatos = ""
+    lista_contatos = ""
 
     contatos_ordenados = sorted(
         contatos.values(),
