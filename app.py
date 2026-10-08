@@ -106,9 +106,19 @@ def salvar_mensagem(
     except requests.RequestException:
         print("FALHA AO SALVAR MENSAGEM")
         return False
+import time
 
+cache_mensagens = {
+    "dados": [],
+    "atualizado_em": 0
+}
 
 def buscar_mensagens():
+    agora = time.monotonic()
+
+    if agora - cache_mensagens["atualizado_em"] < 2:
+        return cache_mensagens["dados"]
+        
     url = f"{SUPABASE_URL}/rest/v1/mensagens"
 
     parametros = {
@@ -137,6 +147,9 @@ def buscar_mensagens():
         # O Supabase entrega as mais recentes primeiro.
         # Invertemos para a conversa aparecer na ordem correta.
         mensagens.reverse()
+
+        cache_mensagens["dados"] = mensagens
+        cache_mensagens["atualizado_em"] = time.monotonic()
 
         return mensagens
 
