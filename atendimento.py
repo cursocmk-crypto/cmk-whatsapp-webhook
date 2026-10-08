@@ -79,19 +79,21 @@ def atendimento_mensagens():
         )
 
         status_texto = ""
+        status_classe = ""
 
         if direcao == "saida":
             if status == "read":
                 status_texto = "✓✓ Lida"
+                status_classe = "status-lida"
             elif status == "delivered":
                 status_texto = "✓✓ Entregue"
             elif status == "sent":
                 status_texto = "✓ Enviada"
             elif status == "failed":
                 status_texto = "⚠ Falhou"
+                status_classe = "status-falha"
             else:
                 status_texto = "✓ Enviada"
-
         detalhes = horario
 
         if status_texto:
@@ -104,7 +106,7 @@ def atendimento_mensagens():
         bolhas += f"""
         <div class="{classe}">
             <div>{texto}</div>
-            <div class="mensagem-info">{detalhes}</div>
+            <div class="mensagem-info {status_classe}">{detalhes}</div>
         </div>
         """
 
@@ -591,18 +593,21 @@ def atendimento():
             )
 
             status_texto = ""
+            status_classe = ""
 
             if direcao == "saida":
                 if status == "read":
                     status_texto = "✓✓ Lida"
+                    status_classe = "status-lida"
                 elif status == "delivered":
                     status_texto = "✓✓ Entregue"
                 elif status == "sent":
                     status_texto = "✓ Enviada"
                 elif status == "failed":
                     status_texto = "⚠ Falhou"
+                    status_classe = "status-falha"
                 else:
-                    status_texto = "✓ Enviada"
+                    status_texto = "✓ Enviada""
 
             detalhes = horario
 
@@ -616,7 +621,7 @@ def atendimento():
             bolhas += f"""
             <div class="{classe}">
                 <div>{texto}</div>
-                <div class="mensagem-info">{detalhes}</div>
+                <div class="mensagem-info {status_classe}">{detalhes}</div>
             </div>
             """
 
