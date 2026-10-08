@@ -704,7 +704,8 @@ def atendimento():
             Nenhuma conversa ainda.
         </div>
         """
-
+    if request.args.get("parcial") == "1":
+        return area_conversa, 200
     return render_template(
         "atendimento.html",
         lista_contatos=lista_contatos,
