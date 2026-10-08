@@ -2,6 +2,7 @@ from flask import Blueprint, request, render_template
 import html
 import requests
 import uuid
+import time
 from datetime import datetime, timezone, timedelta
 
 
@@ -18,6 +19,12 @@ supabase_headers = None
 SUPABASE_URL = None
 enviar_mensagem = None
 salvar_mensagem = None
+
+cache_respostas_rapidas = {
+    "dados": [],
+    "atualizado_em": 0
+}
+
 
 def configurar_atendimento(dependencias):
     global autenticado, exigir_login, buscar_mensagens
@@ -501,25 +508,32 @@ def atendimento():
         respostas_rapidas_html = ""
 
     try:
-        resposta_rapidas = requests.get(
-            f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
-            headers=supabase_headers(),
-            params={
-                "select": "id,titulo,mensagem",
-                "ativo": "eq.true",
-                "order": "titulo.asc"
-            },
-            timeout=15
-        )
+          agora = time.monotonic()
 
-        respostas_ativas = (
-            resposta_rapidas.json()
-            if resposta_rapidas.ok
-            else []
-        )
+    if agora - cache_respostas_rapidas["atualizado_em"] < 60:
+        respostas_ativas = cache_respostas_rapidas["dados"]
+    else:
+        try:
+            resposta_rapidas = requests.get(
+                f"{SUPABASE_URL}/rest/v1/respostas_rapidas",
+                headers=supabase_headers(),
+                params={
+                    "select": "id,titulo,mensagem",
+                    "ativo": "eq.true",
+                    "order": "titulo.asc"
+                },
+                timeout=15
+            )
 
-    except requests.RequestException:
-        respostas_ativas = []
+            if resposta_rapidas.ok:
+                respostas_ativas = resposta_rapidas.json()
+                cache_respostas_rapidas["dados"] = respostas_ativas
+                cache_respostas_rapidas["atualizado_em"] = agora
+            else:
+                respostas_ativas = cache_respostas_rapidas["dados"]
+
+        except requests.RequestException:
+            respostas_ativas = cache_respostas_rapidas["dados"]
     for resposta_item in respostas_ativas:
         titulo_rapido = html.escape(
             resposta_item.get("titulo") or ""
