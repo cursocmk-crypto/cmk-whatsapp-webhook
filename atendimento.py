@@ -211,7 +211,7 @@ def atendimento_conversas():
             )
 
             indicador = f"""
-                <span style="
+                <span class="indicador-novo" style="
                     min-width:20px;
                     height:20px;
                     padding:0 6px;
