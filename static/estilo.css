@@ -305,3 +305,34 @@ body {
     background: #d9fdd3;
     color: #075e54;
 }
+
+
+/* Pesquisa de conversas */
+.pesquisa-conversas {
+    padding: 12px 14px;
+    background: #ffffff;
+}
+
+.pesquisa-conversas input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    border: 1px solid #e2e6eb;
+    border-radius: 12px;
+    background: #f3f5f7;
+    color: #172033;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.pesquisa-conversas input:focus {
+    background: #ffffff;
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+}
+
+.pesquisa-conversas input::placeholder {
+    color: #8893a3;
+}
+
