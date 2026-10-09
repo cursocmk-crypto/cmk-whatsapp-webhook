@@ -545,6 +545,7 @@ def atendimento():
 
             <div class="contato-info">
                 <strong>{nome_seguro}</strong>
+                <small class="status-atendimento">{status_texto}</small>
                 <span>{ultima_segura}</span>
             </div>
         </a>
