@@ -171,6 +171,29 @@ def atendimento_conversas():
 
     lista = ""
 
+    status_conversas = {}
+
+    try:
+        resposta_status = requests.get(
+            f"{SUPABASE_URL}/rest/v1/status_conversas",
+            headers=supabase_headers(),
+            params={"select": "telefone,status"},
+            timeout=5
+        )
+
+        if resposta_status.ok:
+            for item in resposta_status.json():
+                telefone_status = item.get("telefone")
+                status = item.get("status", "novo")
+
+                if telefone_status:
+                    status_conversas[telefone_status] = status
+
+    except requests.RequestException:
+        pass
+
+
+
     # Mais recentes primeiro
     contatos_ordenados = sorted(
         contatos.values(),
