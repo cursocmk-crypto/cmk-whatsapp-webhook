@@ -429,3 +429,39 @@ document.addEventListener('click', async function(evento) {
     }
 });
 
+
+document.addEventListener('change', async function (event) {
+    if (!event.target.matches('.seletor-status')) return;
+
+    const seletor = event.target;
+    const telefone = seletor.dataset.telefone;
+    const status = seletor.value;
+
+    seletor.disabled = true;
+
+    try {
+        const resposta = await fetch('/atendimento/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ telefone, status })
+        });
+
+        if (!resposta.ok) {
+            throw new Error('Falha ao salvar');
+        }
+
+        if (typeof atualizarListaConversas === 'function') {
+            atualizarListaConversas();
+        }
+
+    } catch (erro) {
+        alert('Não foi possível salvar o status. Tente novamente.');
+        window.location.reload();
+    } finally {
+        seletor.disabled = false;
+    }
+});
+
+
