@@ -276,6 +276,22 @@ def atendimento_conversas():
                 ).strftime("%H:%M")
             except (ValueError, TypeError):
                 pass
+
+
+        status_atual = status_conversas.get(
+            telefone, "aguardando"
+        )
+
+        nomes_status = {
+            "aguardando": "🟠 Aguardando",
+            "em_atendimento": "🔵 Em atendimento",
+            "finalizado": "🟢 Finalizado"
+        }
+
+        status_texto = nomes_status.get(
+            status_atual, "🟠 Aguardando"
+        )
+
         
         lista += f"""
             <a class="contato"
@@ -300,6 +316,10 @@ def atendimento_conversas():
                             {horario_ultima}
                         </span>
                     </div>
+
+                    <small class="status-atendimento">
+                        {status_texto}
+                    </small>
 
                     <span style="font-weight:{peso};">
                         {ultima_texto}
