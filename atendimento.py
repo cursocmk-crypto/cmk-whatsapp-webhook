@@ -481,6 +481,15 @@ def atendimento():
         "telefone",
         ""
     )
+    
+    print(
+        "DIAGNOSTICO CONVERSA:",
+        "telefone_recebido=", repr(telefone_ativo),
+        "encontrado=", telefone_ativo in contatos,
+        "quantidade_contatos=", len(contatos),
+        flush=True
+    )
+
 
     if not telefone_ativo and contatos:
         contato_mais_recente = max(
