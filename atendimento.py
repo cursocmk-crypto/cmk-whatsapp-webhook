@@ -454,6 +454,12 @@ def atendimento():
 
 
     lista_contatos = ""
+    status_validos = {
+    "aguardando",
+    "em_atendimento",
+    "finalizado"
+}
+
 
     contatos_ordenados = sorted(
         contatos.values(),
