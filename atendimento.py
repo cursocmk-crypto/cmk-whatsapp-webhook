@@ -461,6 +461,28 @@ def atendimento():
 }
 
 
+    status_conversas = {}
+
+    try:
+        resposta_status = requests.get(
+            f"{SUPABASE_URL}/rest/v1/status_conversas",
+            headers=supabase_headers(),
+            params={"select": "telefone,status"},
+            timeout=5
+        )
+
+        if resposta_status.ok:
+            for item in resposta_status.json():
+                telefone_status = item.get("telefone")
+                status = item.get("status", "novo")
+
+                if telefone_status:
+                    status_conversas[telefone_status] = status
+
+    except requests.RequestException:
+        pass
+
+
     contatos_ordenados = sorted(
         contatos.values(),
         key=lambda c: (
@@ -497,6 +519,22 @@ def atendimento():
 
         if telefone == telefone_ativo:
             classe += " ativo"
+
+        
+        status_atual = status_conversas.get(
+            telefone, "aguardando"
+        )
+
+        if status_atual not in status_validos:
+            status_atual = "aguardando"
+
+        nomes_status = {
+            "aguardando": "🟠 Aguardando",
+            "em_atendimento": "🔵 Em atendimento",
+            "finalizado": "🟢 Finalizado"
+        }
+
+        status_texto = nomes_status[status_atual]
 
         lista_contatos += f"""
         <a class="{classe}"
