@@ -724,16 +724,35 @@ def atendimento():
             </div>
             """
 
+    status_selecionado = status_conversas.get(
+        telefone_ativo, "aguardando"
+    )
+
+    if status_selecionado not in status_validos:
+        status_selecionado = "aguardando"
+
+
         area_conversa = f"""
         <div class="cabecalho-conversa">
             <div class="avatar grande">
                 {nome[:1].upper()}
             </div>
 
-            <div>
-                <strong>{nome}</strong>
-                <span>{telefone}</span>
-            </div>
+            
+        <div>
+            <strong>{nome}</strong>
+            <span>{telefone}</span>
+        
+            <select class="seletor-status"
+                    data-telefone="{telefone}">
+                
+                <option value="aguardando" {"selected" if status_selecionado == "aguardando" else ""}>🟠 Aguardando</option>
+                <option value="em_atendimento" {"selected" if status_selecionado == "em_atendimento" else ""}>🔵 Em atendimento</option>
+                <option value="finalizado" {"selected" if status_selecionado == "finalizado" else ""}>🟢 Finalizado</option>
+
+            </select>
+        </div>
+
         </div>
 
         <div class="historico">
@@ -792,3 +811,44 @@ def atendimento():
         lista_contatos=lista_contatos,
         area_conversa=area_conversa
     ), 200
+
+
+@atendimento_bp.route("/atendimento/status", methods=["POST"])
+def atualizar_status_atendimento():
+    if not autenticado():
+        return {"erro": "Não autorizado"}, 401
+
+    dados = request.get_json(silent=True) or {}
+    telefone = str(dados.get("telefone") or "").strip()
+    status = dados.get("status")
+
+    status_permitidos = {
+        "aguardando",
+        "em_atendimento",
+        "finalizado"
+    }
+
+    if not telefone or status not in status_permitidos:
+        return {"erro": "Dados inválidos"}, 400
+
+    try:
+        resposta = requests.post(
+            f"{SUPABASE_URL}/rest/v1/status_conversas",
+            headers={
+                **supabase_headers(),
+                "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            json={
+                "telefone": telefone,
+                "status": status
+            },
+            timeout=10
+        )
+
+        if not resposta.ok:
+            return {"erro": "Falha ao salvar status"}, 502
+
+        return {"sucesso": True}, 200
+
+    except requests.RequestException:
+        return {"erro": "Falha de conexão"}, 502
