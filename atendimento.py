@@ -733,79 +733,79 @@ def atendimento():
             </div>
             """
 
-    status_selecionado = status_conversas.get(
-        telefone_ativo, "aguardando"
-    )
-
-    if status_selecionado not in status_validos:
-        status_selecionado = "aguardando"
-
-
-        area_conversa = f"""
-        <div class="cabecalho-conversa">
-            <div class="avatar grande">
-                {nome[:1].upper()}
-            </div>
-
-            
-        <div>
-            <strong>{nome}</strong>
-            <span>{telefone}</span>
+            status_selecionado = status_conversas.get(
+                telefone_ativo, "aguardando"
+            )
         
-            <select class="seletor-status"
-                    data-telefone="{telefone}">
+            if status_selecionado not in status_validos:
+                status_selecionado = "aguardando"
+        
+        
+                area_conversa = f"""
+                <div class="cabecalho-conversa">
+                    <div class="avatar grande">
+                        {nome[:1].upper()}
+                    </div>
+        
+                    
+                <div>
+                    <strong>{nome}</strong>
+                    <span>{telefone}</span>
                 
-                <option value="aguardando" {"selected" if status_selecionado == "aguardando" else ""}>🟠 Aguardando</option>
-                <option value="em_atendimento" {"selected" if status_selecionado == "em_atendimento" else ""}>🔵 Em atendimento</option>
-                <option value="finalizado" {"selected" if status_selecionado == "finalizado" else ""}>🟢 Finalizado</option>
-
-            </select>
-        </div>
-
-        </div>
-
-        <div class="historico">
-            {bolhas}
-        </div>
-
-               <form
-            class="caixa-envio"
-            method="POST"
-            action="/atendimento/enviar"
-           onsubmit="enviarMensagemAjax(event, this); return false;"
-        >
-            <input
-                type="hidden"
-                name="telefone"
-                value="{telefone}"
-            >
-
-            <input
-                type="hidden"
-                name="nome"
-                value="{nome}"
-            >
-            <input
-                type="hidden"
-                name="request_id"
-                value=""
-            >
-           
-                       <div class="respostas-rapidas">
-                {respostas_rapidas_html}
-            </div>
-            
-            <textarea
-                name="mensagem"
-                placeholder="Digite sua mensagem..."
-                required
-            ></textarea>
-
-            <button type="submit">
-                Enviar
-            </button>
-        </form>
-        """
+                    <select class="seletor-status"
+                            data-telefone="{telefone}">
+                        
+                        <option value="aguardando" {"selected" if status_selecionado == "aguardando" else ""}>🟠 Aguardando</option>
+                        <option value="em_atendimento" {"selected" if status_selecionado == "em_atendimento" else ""}>🔵 Em atendimento</option>
+                        <option value="finalizado" {"selected" if status_selecionado == "finalizado" else ""}>🟢 Finalizado</option>
+        
+                    </select>
+                </div>
+        
+                </div>
+        
+                <div class="historico">
+                    {bolhas}
+                </div>
+        
+                       <form
+                    class="caixa-envio"
+                    method="POST"
+                    action="/atendimento/enviar"
+                   onsubmit="enviarMensagemAjax(event, this); return false;"
+                >
+                    <input
+                        type="hidden"
+                        name="telefone"
+                        value="{telefone}"
+                    >
+        
+                    <input
+                        type="hidden"
+                        name="nome"
+                        value="{nome}"
+                    >
+                    <input
+                        type="hidden"
+                        name="request_id"
+                        value=""
+                    >
+                   
+                               <div class="respostas-rapidas">
+                        {respostas_rapidas_html}
+                    </div>
+                    
+                    <textarea
+                        name="mensagem"
+                        placeholder="Digite sua mensagem..."
+                        required
+                    ></textarea>
+        
+                    <button type="submit">
+                        Enviar
+                    </button>
+                </form>
+                """
 
     if not lista_contatos:
         lista_contatos = """
