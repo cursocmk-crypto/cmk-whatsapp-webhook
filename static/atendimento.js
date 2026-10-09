@@ -280,10 +280,24 @@ let filtroAtual = 'todas';
 function aplicarFiltroConversas() {
     const contatos = document.querySelectorAll('.lista-contatos .contato');
 
+    const pesquisa = (
+        document.getElementById('pesquisar-contatos')?.value || ''
+    ).toLowerCase().trim();
+
     contatos.forEach(contato => {
         const temMensagemNova = !!contato.querySelector('.indicador-novo');
+
+        const correspondePesquisa = contato.textContent
+            .toLowerCase()
+            .includes(pesquisa) ||
+            new URL(contato.href).searchParams
+                .get('telefone')?.includes(pesquisa);
+
+        const correspondeFiltro =
+            filtroAtual === 'todas' || temMensagemNova;
+
         contato.style.display =
-            filtroAtual === 'todas' || temMensagemNova ? '' : 'none';
+            correspondeFiltro && correspondePesquisa ? '' : 'none';
     });
 }
 
@@ -298,6 +312,11 @@ document.querySelectorAll('.filtro').forEach(botao => {
         aplicarFiltroConversas();
     });
 });
+
+document.getElementById('pesquisar-contatos')
+    ?.addEventListener('input', () => {
+        aplicarFiltroConversas();
+    });
 
 function destacarConversaAtiva() {
     const telefoneAtivo = new URLSearchParams(
